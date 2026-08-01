@@ -11,6 +11,9 @@ const SalesOrder = ({ setActiveTab }) => {
   
   const [selectedProduct, setSelectedProduct] = useState('');
   const [qty, setQty] = useState(1);
+  const [itemNotes, setItemNotes] = useState('');
+  const [sugarLevel, setSugarLevel] = useState('Normal');
+  const [extraSugarCost, setExtraSugarCost] = useState(0);
 
   const handleOpenModal = () => {
     setFormData({ id: null, customerId: '', status: 'Pending', items: [] });
@@ -22,12 +25,18 @@ const SalesOrder = ({ setActiveTab }) => {
     const product = products.find(p => p.id === selectedProduct);
     if (!product) return;
 
+    const additionalCost = sugarLevel === 'Extra Sugar' ? Number(extraSugarCost) : 0;
+    const finalPrice = product.price + additionalCost;
+
     const newItem = {
       productId: product.id,
       name: product.name,
       price: product.price,
       qty: Number(qty),
-      subtotal: product.price * Number(qty)
+      sugarLevel,
+      extraSugarCost: additionalCost,
+      notes: itemNotes,
+      subtotal: finalPrice * Number(qty)
     };
 
     setFormData({
@@ -36,6 +45,9 @@ const SalesOrder = ({ setActiveTab }) => {
     });
     setSelectedProduct('');
     setQty(1);
+    setItemNotes('');
+    setSugarLevel('Normal');
+    setExtraSugarCost(0);
   };
 
   const removeItem = (index) => {
@@ -175,32 +187,65 @@ const SalesOrder = ({ setActiveTab }) => {
 
               <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Item Pesanan</h3>
-                <div className="flex gap-3 mb-4">
-                  <select 
-                    className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
-                  >
-                    <option value="">Pilih Produk...</option>
-                    {products.map(p => <option key={p.id} value={p.id}>{p.name} - {formatRp(p.price)}</option>)}
-                  </select>
-                  <input 
-                    type="number" min="1" placeholder="Qty"
-                    className="w-24 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    value={qty} onChange={e => setQty(e.target.value)}
-                  />
-                  <button 
-                    type="button" onClick={addItem}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                  >
-                    Tambah
-                  </button>
+                <div className="flex flex-col gap-3 mb-4 border border-gray-100 p-3 rounded-lg bg-white">
+                  <div className="flex gap-3">
+                    <select 
+                      className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
+                    >
+                      <option value="">Pilih Produk...</option>
+                      {products.map(p => <option key={p.id} value={p.id}>{p.name} - {formatRp(p.price)}</option>)}
+                    </select>
+                    <input 
+                      type="number" min="1" placeholder="Qty"
+                      className="w-20 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={qty} onChange={e => setQty(e.target.value)}
+                    />
+                    <select
+                      className="w-36 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
+                    >
+                      <option value="Normal">Normal</option>
+                      <option value="Less Sugar">Less Sugar</option>
+                      <option value="No Sugar">No Sugar</option>
+                      <option value="Extra Sugar">Extra Sugar</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex gap-3 items-end">
+                    {sugarLevel === 'Extra Sugar' && (
+                      <div className="w-36">
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Biaya Extra Sugar</label>
+                        <input 
+                          type="number" min="0" placeholder="Nominal"
+                          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          value={extraSugarCost} onChange={e => setExtraSugarCost(e.target.value)}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Notes / Catatan</label>
+                      <input 
+                        type="text" placeholder="Contoh: Es dipisah, dll"
+                        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                        value={itemNotes} onChange={e => setItemNotes(e.target.value)}
+                      />
+                    </div>
+                    <button 
+                      type="button" onClick={addItem}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-sm h-[42px]"
+                    >
+                      Tambah
+                    </button>
+                  </div>
                 </div>
 
-                <div className="max-h-40 overflow-y-auto custom-scrollbar">
+                <div className="max-h-56 overflow-y-auto custom-scrollbar">
                   <table className="w-full text-sm text-left border-collapse">
                     <thead className="bg-gray-100 sticky top-0">
                       <tr className="text-gray-600">
                         <th className="p-2 font-medium border-b border-gray-200">Produk</th>
+                        <th className="p-2 font-medium border-b border-gray-200">Keterangan</th>
                         <th className="p-2 font-medium border-b border-gray-200 text-right">Harga</th>
                         <th className="p-2 font-medium border-b border-gray-200 text-right">Qty</th>
                         <th className="p-2 font-medium border-b border-gray-200 text-right">Subtotal</th>
@@ -209,13 +254,21 @@ const SalesOrder = ({ setActiveTab }) => {
                     </thead>
                     <tbody>
                       {formData.items.map((item, index) => (
-                        <tr key={index} className="border-b border-gray-200 last:border-0">
-                          <td className="p-2 text-gray-800">{item.name}</td>
+                        <tr key={index} className="border-b border-gray-200 last:border-0 align-top">
+                          <td className="p-2 text-gray-800 font-medium">{item.name}</td>
+                          <td className="p-2 text-gray-500 text-xs">
+                            <div className="flex flex-col gap-0.5">
+                              {item.sugarLevel && item.sugarLevel !== 'Normal' && (
+                                <span>Sugar: {item.sugarLevel} {item.extraSugarCost > 0 ? `(+${formatRp(item.extraSugarCost)})` : ''}</span>
+                              )}
+                              {item.notes && <span>Notes: {item.notes}</span>}
+                            </div>
+                          </td>
                           <td className="p-2 text-gray-600 text-right">{formatRp(item.price)}</td>
                           <td className="p-2 text-gray-800 text-right">{item.qty}</td>
                           <td className="p-2 text-emerald-600 font-medium text-right">{formatRp(item.subtotal)}</td>
                           <td className="p-2 text-center">
-                            <button type="button" onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700"><X size={14} /></button>
+                            <button type="button" onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700 mt-0.5"><X size={14} /></button>
                           </td>
                         </tr>
                       ))}

@@ -3,7 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { 
   Coffee, Users, Package, ShoppingCart, TrendingUp, TrendingDown, 
   BarChart2, FileText, Calendar, ArrowUpRight, ArrowDownRight,
-  ClipboardList, Truck
+  ClipboardList, Truck, Award, Star
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -263,6 +263,38 @@ const Dashboard = ({ setActiveTab }) => {
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
+  // ── Rankings ──────────────────────────────────────────────────────────────
+  const { topCustomers, topProducts } = useMemo(() => {
+    const customerStats = {};
+    const productStats = {};
+
+    salesOrders.forEach(so => {
+      // Customer
+      if (!customerStats[so.customerId]) {
+        const c = customers.find(c => c.id === so.customerId);
+        customerStats[so.customerId] = { id: so.customerId, name: c ? c.name : 'Unknown', totalAmount: 0, totalQty: 0 };
+      }
+      customerStats[so.customerId].totalAmount += so.total;
+
+      // Products
+      so.items.forEach(item => {
+        customerStats[so.customerId].totalQty += item.qty;
+
+        const pKey = item.productId || item.name;
+        if (!productStats[pKey]) {
+          productStats[pKey] = { name: item.name, totalQty: 0, totalAmount: 0 };
+        }
+        productStats[pKey].totalQty += item.qty;
+        productStats[pKey].totalAmount += item.subtotal;
+      });
+    });
+
+    const topC = Object.values(customerStats).sort((a, b) => b.totalAmount - a.totalAmount).slice(0, 5);
+    const topP = Object.values(productStats).sort((a, b) => b.totalQty - a.totalQty).slice(0, 5);
+
+    return { topCustomers: topC, topProducts: topP };
+  }, [salesOrders, customers]);
+
   // ── Stat cards ────────────────────────────────────────────────────────────
   const statCards = [
     {
@@ -489,6 +521,77 @@ const Dashboard = ({ setActiveTab }) => {
                   }`}>
                     {po.status}
                   </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Lists: Top Customers & Best Sellers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
+        {/* Top Customers */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <Award className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-gray-900 text-sm">Customer Terbaik</h3>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {topCustomers.length === 0 ? (
+              <div className="px-6 py-8 text-center text-gray-400 text-sm">
+                Belum ada data customer.
+              </div>
+            ) : topCustomers.map((c, idx) => (
+              <div key={c.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-200 text-gray-700' : idx === 2 ? 'bg-orange-100 text-orange-800' : 'bg-gray-50 text-gray-400'}`}>
+                    {idx + 1}
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-bold text-gray-900">{c.name}</span>
+                    <span className="text-xs text-gray-500">{c.totalQty} items dibeli</span>
+                  </div>
+                </div>
+                <div className="text-sm font-bold text-emerald-600">
+                  {formatRp(c.totalAmount)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Best Sellers */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Star className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-gray-900 text-sm">Menu Terlaris</h3>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {topProducts.length === 0 ? (
+              <div className="px-6 py-8 text-center text-gray-400 text-sm">
+                Belum ada data produk terjual.
+              </div>
+            ) : topProducts.map((p, idx) => (
+              <div key={idx} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-200 text-gray-700' : idx === 2 ? 'bg-orange-100 text-orange-800' : 'bg-gray-50 text-gray-400'}`}>
+                    {idx + 1}
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-bold text-gray-900">{p.name}</span>
+                    <span className="text-xs text-gray-500">{p.totalQty} terjual</span>
+                  </div>
+                </div>
+                <div className="text-sm font-bold text-indigo-600">
+                  {formatRp(p.totalAmount)}
                 </div>
               </div>
             ))}
