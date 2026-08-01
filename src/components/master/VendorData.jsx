@@ -70,7 +70,7 @@ const VendorData = () => {
                   <button onClick={() => handleOpenModal(v)} className="text-blue-500 hover:text-blue-700 transition-colors p-1">
                     <Edit size={18} />
                   </button>
-                  <button onClick={() => deleteVendor(v.id)} className="text-red-500 hover:text-red-700 transition-colors p-1">
+                  <button onClick={() => { if(window.confirm('Yakin ingin menghapus data ini?')) deleteVendor(v.id) }} className="text-red-500 hover:text-red-700 transition-colors p-1">
                     <Trash2 size={18} />
                   </button>
                 </td>

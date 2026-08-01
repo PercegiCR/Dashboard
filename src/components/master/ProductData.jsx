@@ -123,7 +123,7 @@ const ProductData = () => {
                   <button onClick={() => handleOpenModal(item)} title="Edit" className="text-blue-500 hover:text-blue-700 transition-colors p-1">
                     <Edit size={18} />
                   </button>
-                  <button onClick={() => deleteProduct(item.id)} title="Hapus" className="text-red-500 hover:text-red-700 transition-colors p-1">
+                  <button onClick={() => { if(window.confirm('Yakin ingin menghapus data ini?')) deleteProduct(item.id) }} title="Hapus" className="text-red-500 hover:text-red-700 transition-colors p-1">
                     <Trash2 size={18} />
                   </button>
                 </td>
