@@ -25,10 +25,10 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden print:h-auto print:overflow-visible print:bg-white">
       {/* SIDEBAR KIRI */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col h-full shadow-2xl flex-shrink-0 print:hidden">
-        <div className="p-6 text-xl font-bold border-b border-slate-800 flex items-center gap-3">
-          <div className="bg-white/10 p-1.5 rounded-lg flex items-center justify-center">
-            <img src="/logo.png" alt="Percegi Coffee Logo" className="w-8 h-8 object-contain drop-shadow-md" />
+      <aside className="w-64 bg-white text-slate-800 flex flex-col h-full border-r border-gray-200 flex-shrink-0 print:hidden z-20">
+        <div className="p-6 text-xl font-bold border-b border-gray-100 flex items-center gap-3 text-slate-900">
+          <div className="flex items-center justify-center">
+            <img src="/logo.png" alt="Percegi Coffee Logo" className="h-10 object-contain" />
           </div>
           Percegi Coffee
         </div>
@@ -40,7 +40,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all duration-200 ${
                 activeTab === item.id 
                   ? 'bg-amber-600 text-white shadow-md' 
-                  : 'text-slate-400 hover:bg-amber-600 hover:text-white'
+                  : 'text-slate-600 hover:bg-amber-50 hover:text-amber-600'
               }`}
             >
               {item.icon}
