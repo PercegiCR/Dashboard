@@ -158,7 +158,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-overlay">
-          <div className="bg-white p-6 rounded-xl w-full max-w-2xl shadow-2xl animate-popup">
+          <div className="bg-white p-6 rounded-xl w-full max-w-3xl shadow-2xl animate-popup">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900">Buat Purchase Order Baru</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
