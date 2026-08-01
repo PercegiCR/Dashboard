@@ -38,35 +38,50 @@ const SalesOrder = ({ setActiveTab }) => {
   };
 
   const addItem = () => {
-    if (!selectedProduct || qty <= 0) return;
-    const product = products.find(p => String(p.id) === String(selectedProduct));
-    if (!product) return;
+    try {
+      if (!selectedProduct) {
+        alert("Pilih produk terlebih dahulu!");
+        return;
+      }
+      if (Number(qty) <= 0) {
+        alert("Jumlah (Qty) harus lebih dari 0!");
+        return;
+      }
+      const product = products.find(p => String(p.id) === String(selectedProduct));
+      if (!product) {
+        alert("Produk tidak ditemukan!");
+        return;
+      }
 
-    const additionalCost = sugarLevel === 'Extra Shot' ? Number(extraShotCost) : 0;
-    const finalPrice = product.price + additionalCost;
+      const additionalCost = sugarLevel === 'Extra Shot' ? Number(extraShotCost) : 0;
+      const finalPrice = (Number(product.price) || 0) + additionalCost;
 
-    const newItem = {
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      qty: Number(qty),
-      sugarLevel,
-      extraShotCost: additionalCost,
-      temperature,
-      notes: itemNotes,
-      subtotal: finalPrice * Number(qty)
-    };
+      const newItem = {
+        productId: product.id,
+        name: product.name,
+        price: Number(product.price) || 0,
+        qty: Number(qty),
+        sugarLevel,
+        extraShotCost: additionalCost,
+        temperature,
+        notes: itemNotes,
+        subtotal: finalPrice * Number(qty)
+      };
 
-    setFormData({
-      ...formData,
-      items: [...formData.items, newItem]
-    });
-    setSelectedProduct('');
-    setQty(1);
-    setItemNotes('');
-    setSugarLevel('Normal');
-    setExtraShotCost(0);
-    setTemperature('Normal');
+      setFormData(prev => ({
+        ...prev,
+        items: [...(prev.items || []), newItem]
+      }));
+      
+      setSelectedProduct('');
+      setQty(1);
+      setItemNotes('');
+      setSugarLevel('Normal');
+      setExtraShotCost(0);
+      setTemperature('Normal');
+    } catch (error) {
+      alert("Terjadi kesalahan: " + error.message);
+    }
   };
 
   const removeItem = (index) => {
