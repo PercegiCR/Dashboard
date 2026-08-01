@@ -30,7 +30,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
           <div className="text-amber-500 bg-amber-500/10 p-2 rounded-lg">
             <Coffee className="w-6 h-6" />
           </div>
-          KopiERP
+          Percegi Coffee
         </div>
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto mt-4">
           {menuItems.map(item => (
