@@ -6,7 +6,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
   const { purchaseOrders, vendors, inventory, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, updateInventory } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ 
-    id: null, vendorId: '', status: 'Hutang', items: [] 
+    id: null, vendorId: '', status: 'Hutang', items: [], taxType: 'Non Pajak', taxRate: 0 
   });
   
   const [selectedInventory, setSelectedInventory] = useState('');
@@ -14,7 +14,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
   const [price, setPrice] = useState(0);
 
   const handleOpenModal = () => {
-    setFormData({ id: null, vendorId: '', status: 'Hutang', items: [] });
+    setFormData({ id: null, vendorId: '', status: 'Hutang', items: [], taxType: 'Non Pajak', taxRate: 0 });
     setIsModalOpen(true);
   };
 
@@ -29,7 +29,9 @@ const PurchaseOrder = ({ setActiveTab }) => {
       id: po.id,
       vendorId: po.vendorId,
       status: po.status,
-      items: [...po.items]
+      items: [...po.items],
+      taxType: po.taxType || 'Non Pajak',
+      taxRate: po.taxRate || 0
     });
     setIsModalOpen(true);
   };
@@ -70,7 +72,9 @@ const PurchaseOrder = ({ setActiveTab }) => {
     setFormData({ ...formData, items: newItems });
   };
 
-  const getTotal = () => formData.items.reduce((acc, item) => acc + item.subtotal, 0);
+  const getSubtotal = () => formData.items.reduce((acc, item) => acc + item.subtotal, 0);
+  const getTaxAmount = () => getSubtotal() * (formData.taxRate / 100);
+  const getTotal = () => getSubtotal() + getTaxAmount();
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -82,6 +86,10 @@ const PurchaseOrder = ({ setActiveTab }) => {
     const dataToSave = {
       vendorId: formData.vendorId,
       items: formData.items,
+      subtotal: getSubtotal(),
+      taxType: formData.taxType,
+      taxRate: formData.taxRate,
+      taxAmount: getTaxAmount(),
       total: getTotal(),
       status: formData.status
     };
@@ -235,6 +243,23 @@ const PurchaseOrder = ({ setActiveTab }) => {
                     <option value="Lunas">Lunas</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pajak</label>
+                  <select 
+                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    value={`${formData.taxType}|${formData.taxRate}`} 
+                    onChange={e => {
+                      const [type, rate] = e.target.value.split('|');
+                      setFormData({...formData, taxType: type, taxRate: Number(rate)});
+                    }}
+                  >
+                    <option value="Non Pajak|0">Non Pajak (0%)</option>
+                    <option value="PPN|11">PPN (11%)</option>
+                    <option value="PPN|12">PPN (12%)</option>
+                    <option value="PPh|-2">PPh (-2%)</option>
+                    <option value="PPh|-2.5">PPh (-2.5%)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
@@ -303,9 +328,19 @@ const PurchaseOrder = ({ setActiveTab }) => {
                   </table>
                 </div>
                 
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
-                  <span className="text-gray-700 font-medium">Total Pembelian:</span>
-                  <span className="text-2xl font-bold text-rose-600">{formatRp(getTotal())}</span>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-500 font-medium">Subtotal:</span>
+                    <span className="text-lg font-semibold text-gray-800">{formatRp(getSubtotal())}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-500 font-medium">Pajak ({formData.taxType} {formData.taxRate > 0 ? `+${formData.taxRate}%` : formData.taxRate < 0 ? `${formData.taxRate}%` : ''}):</span>
+                    <span className="text-lg font-semibold text-gray-800">{formatRp(getTaxAmount())}</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
+                    <span className="text-gray-700 font-bold">Total Pembelian:</span>
+                    <span className="text-2xl font-bold text-rose-600">{formatRp(getTotal())}</span>
+                  </div>
                 </div>
               </div>
               

@@ -111,11 +111,11 @@ const InvoiceSO = ({ setActiveTab }) => {
           <div className="w-64">
             <div className="flex justify-between py-2 border-b border-slate-200">
               <span className="text-slate-600 font-medium">Subtotal</span>
-              <span className="font-bold text-slate-800">{formatRp(so.total)}</span>
+              <span className="font-bold text-slate-800">{formatRp(so.subtotal || so.total)}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-200">
-              <span className="text-slate-600 font-medium">Pajak (0%)</span>
-              <span className="font-bold text-slate-800">Rp 0</span>
+              <span className="text-slate-600 font-medium">Pajak ({so.taxType || 'Non Pajak'})</span>
+              <span className="font-bold text-slate-800">{formatRp(so.taxAmount || 0)}</span>
             </div>
             <div className="flex justify-between py-3 mt-2 bg-amber-50 px-3 rounded-lg border border-amber-100">
               <span className="font-black text-amber-900 uppercase">Total Akhir</span>
