@@ -13,12 +13,12 @@ import {
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { id: 'vendor', label: 'Data Vendor', icon: <Briefcase size={20} /> },
-    { id: 'customer', label: 'Data Customer', icon: <Users size={20} /> },
-    { id: 'inventory', label: 'Data Inventory', icon: <Package size={20} /> },
-    { id: 'product', label: 'Data Produk', icon: <Coffee size={20} /> },
     { id: 'so', label: 'Sales Order (SO)', icon: <ShoppingCart size={20} /> },
     { id: 'po', label: 'Purchase Order (PO)', icon: <FileText size={20} /> },
+    { id: 'product', label: 'Data Produk', icon: <Coffee size={20} /> },
+    { id: 'inventory', label: 'Data Inventory', icon: <Package size={20} /> },
+    { id: 'customer', label: 'Data Customer', icon: <Users size={20} /> },
+    { id: 'vendor', label: 'Data Vendor', icon: <Briefcase size={20} /> },
     { id: 'finance', label: 'Finance Dashboard', icon: <Wallet size={20} /> },
   ];
 

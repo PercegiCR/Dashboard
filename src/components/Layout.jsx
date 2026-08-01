@@ -9,22 +9,34 @@ import {
   Wallet,
   Briefcase,
   Menu,
-  X
+  X,
+  Plus,
+  FilePlus,
+  ShoppingCart as ShoppingCartIcon
 } from 'lucide-react';
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { id: 'vendor', label: 'Data Vendor', icon: <Briefcase className="w-5 h-5" /> },
-    { id: 'customer', label: 'Data Customer', icon: <Users className="w-5 h-5" /> },
-    { id: 'inventory', label: 'Data Inventory', icon: <Package className="w-5 h-5" /> },
-    { id: 'product', label: 'Data Produk', icon: <Coffee className="w-5 h-5" /> },
     { id: 'so', label: 'Sales Order (SO)', icon: <ShoppingCart className="w-5 h-5" /> },
     { id: 'po', label: 'Purchase Order (PO)', icon: <FileText className="w-5 h-5" /> },
+    { id: 'product', label: 'Data Produk', icon: <Coffee className="w-5 h-5" /> },
+    { id: 'inventory', label: 'Data Inventory', icon: <Package className="w-5 h-5" /> },
+    { id: 'customer', label: 'Data Customer', icon: <Users className="w-5 h-5" /> },
+    { id: 'vendor', label: 'Data Vendor', icon: <Briefcase className="w-5 h-5" /> },
     { id: 'finance', label: 'Finance Dashboard', icon: <Wallet className="w-5 h-5" /> },
   ];
+
+  const handleFabClick = (type) => {
+    setActiveTab(type);
+    setIsFabMenuOpen(false);
+    setTimeout(() => {
+      window.dispatchEvent(new Event(`open-${type}-modal`));
+    }, 50);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden print:h-auto print:overflow-visible print:bg-white relative">
@@ -100,6 +112,38 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
           </div>
         </div>
       </main>
+
+      {/* FLOATING ACTION BUTTON */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end print:hidden">
+        {isFabMenuOpen && (
+          <div className="flex flex-col gap-3 mb-4 animate-popup">
+            <button 
+              onClick={() => handleFabClick('so')}
+              className="flex items-center justify-end gap-3 group"
+            >
+              <span className="bg-white px-3 py-1.5 rounded-lg shadow-md text-sm font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">Buat Pesanan</span>
+              <div className="w-12 h-12 bg-amber-500 hover:bg-amber-600 rounded-full flex items-center justify-center text-white shadow-lg transition-transform transform hover:scale-110">
+                <ShoppingCartIcon size={20} />
+              </div>
+            </button>
+            <button 
+              onClick={() => handleFabClick('po')}
+              className="flex items-center justify-end gap-3 group"
+            >
+              <span className="bg-white px-3 py-1.5 rounded-lg shadow-md text-sm font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">Buat PO</span>
+              <div className="w-12 h-12 bg-emerald-500 hover:bg-emerald-600 rounded-full flex items-center justify-center text-white shadow-lg transition-transform transform hover:scale-110">
+                <FilePlus size={20} />
+              </div>
+            </button>
+          </div>
+        )}
+        <button 
+          onClick={() => setIsFabMenuOpen(!isFabMenuOpen)}
+          className={`w-14 h-14 bg-gray-900 hover:bg-gray-800 rounded-full flex items-center justify-center text-white shadow-xl transition-transform duration-300 ${isFabMenuOpen ? 'rotate-45' : 'hover:scale-110'}`}
+        >
+          <Plus size={28} />
+        </button>
+      </div>
     </div>
   );
 };

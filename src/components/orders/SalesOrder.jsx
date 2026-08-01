@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2 } from 'lucide-react';
 
@@ -20,6 +20,12 @@ const SalesOrder = ({ setActiveTab }) => {
     setFormData({ id: null, customerId: '', status: 'Pending', items: [] });
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    const handleOpen = () => handleOpenModal();
+    window.addEventListener('open-so-modal', handleOpen);
+    return () => window.removeEventListener('open-so-modal', handleOpen);
+  }, []);
 
   const handleEditModal = (so) => {
     setFormData({
