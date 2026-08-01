@@ -196,30 +196,38 @@ const PurchaseOrder = ({ setActiveTab }) => {
 
               <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Item Pembelian</h3>
-                <div className="flex flex-col sm:flex-row gap-3 mb-4 items-stretch sm:items-center">
-                  <select 
-                    className="flex-[2] bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    value={selectedInventory} onChange={handleInventoryChange}
-                  >
-                    <option value="">Pilih Barang...</option>
-                    {inventory.map(i => <option key={i.id} value={i.id}>{i.name} (Stok: {i.stock} {i.unit})</option>)}
-                  </select>
-                  <input 
-                    type="number" min="0" placeholder="Harga Satuan"
-                    className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    value={price} onChange={e => setPrice(e.target.value)}
-                  />
-                  <input 
-                    type="number" min="0.01" step="0.01" placeholder="Qty"
-                    className="flex-1 sm:w-24 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    value={qty} onChange={e => setQty(e.target.value)}
-                  />
-                  <button 
-                    type="button" onClick={addItem}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap"
-                  >
-                    Tambah
-                  </button>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-4 items-end">
+                  <div className="sm:col-span-5">
+                    <select 
+                      className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={selectedInventory} onChange={handleInventoryChange}
+                    >
+                      <option value="">Pilih Barang...</option>
+                      {inventory.map(i => <option key={i.id} value={i.id}>{i.name} (Stok: {i.stock} {i.unit})</option>)}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-3">
+                    <input 
+                      type="number" min="0" placeholder="Harga Satuan"
+                      className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={price} onChange={e => setPrice(e.target.value)}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <input 
+                      type="number" min="0.01" step="0.01" placeholder="Qty"
+                      className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={qty} onChange={e => setQty(e.target.value)}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <button 
+                      type="button" onClick={addItem}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                    >
+                      Tambah
+                    </button>
+                  </div>
                 </div>
 
                 <div className="max-h-40 overflow-y-auto overflow-x-auto custom-scrollbar">
