@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, X, ShoppingCart, Check, FileText } from 'lucide-react';
+import { Plus, X, ShoppingCart, Check, FileText, Edit } from 'lucide-react';
 
 const PurchaseOrder = ({ setActiveTab }) => {
   const { purchaseOrders, vendors, inventory, addPurchaseOrder, updatePurchaseOrder, updateInventory } = useAppContext();
@@ -15,6 +15,16 @@ const PurchaseOrder = ({ setActiveTab }) => {
 
   const handleOpenModal = () => {
     setFormData({ id: null, vendorId: '', status: 'Hutang', items: [] });
+    setIsModalOpen(true);
+  };
+
+  const handleEditModal = (po) => {
+    setFormData({
+      id: po.id,
+      vendorId: po.vendorId,
+      status: po.status,
+      items: [...po.items]
+    });
     setIsModalOpen(true);
   };
 
@@ -70,15 +80,19 @@ const PurchaseOrder = ({ setActiveTab }) => {
       status: formData.status
     };
     
-    addPurchaseOrder(dataToSave);
+    if (formData.id) {
+      updatePurchaseOrder(formData.id, dataToSave);
+    } else {
+      addPurchaseOrder(dataToSave);
 
-    // Update Stock automatically
-    formData.items.forEach(orderItem => {
-      const invItem = inventory.find(i => i.id === orderItem.inventoryId);
-      if (invItem) {
-        updateInventory(invItem.id, { ...invItem, stock: invItem.stock + orderItem.qty });
-      }
-    });
+      // Update Stock automatically
+      formData.items.forEach(orderItem => {
+        const invItem = inventory.find(i => i.id === orderItem.inventoryId);
+        if (invItem) {
+          updateInventory(invItem.id, { ...invItem, stock: invItem.stock + orderItem.qty });
+        }
+      });
+    }
 
     setIsModalOpen(false);
   };
@@ -138,9 +152,14 @@ const PurchaseOrder = ({ setActiveTab }) => {
                 </td>
                 <td className="p-4 flex justify-end gap-3">
                   {po.status === 'Hutang' && (
-                    <button onClick={() => markAsLunas(po.id)} title="Tandai Lunas" className="text-emerald-500 hover:text-emerald-700 transition-colors p-1">
-                      <Check size={18} />
-                    </button>
+                    <>
+                      <button onClick={() => markAsLunas(po.id)} title="Tandai Lunas" className="text-emerald-500 hover:text-emerald-700 transition-colors p-1">
+                        <Check size={18} />
+                      </button>
+                      <button onClick={() => handleEditModal(po)} title="Edit PO" className="text-amber-500 hover:text-amber-700 transition-colors p-1">
+                        <Edit size={18} />
+                      </button>
+                    </>
                   )}
                   <button onClick={() => { localStorage.setItem('print_po', po.id); setActiveTab('invoice_po'); }} title="Cetak PO" className="text-blue-500 hover:text-blue-700 transition-colors p-1">
                     <FileText size={18} />
@@ -162,7 +181,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-overlay">
           <div className="bg-white p-6 rounded-xl w-full max-w-3xl shadow-2xl animate-popup">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Buat Purchase Order Baru</h2>
+              <h2 className="text-xl font-bold text-gray-900">{formData.id ? 'Edit Purchase Order' : 'Buat Purchase Order Baru'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                 <X size={24} />
               </button>
@@ -277,7 +296,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
                   type="submit"
                   className="px-4 py-2 rounded-lg font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
                 >
-                  Simpan PO
+                  {formData.id ? 'Simpan Perubahan' : 'Simpan PO'}
                 </button>
               </div>
             </form>
