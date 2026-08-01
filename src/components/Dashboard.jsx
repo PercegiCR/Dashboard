@@ -317,287 +317,247 @@ const Dashboard = ({ setActiveTab }) => {
 
   const periodLabel = period === 1 ? 'Hari Ini' : `${period} Hari Terakhir`;
 
+  const { todayRevenue, todayOrdersCount } = useMemo(() => {
+    const todaySOs = salesOrders.filter(so => {
+        const d = new Date(so.date);
+        const t = new Date();
+        return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear();
+    });
+    return {
+      todayRevenue: todaySOs.reduce((sum, so) => sum + so.total, 0),
+      todayOrdersCount: todaySOs.length
+    };
+  }, [salesOrders]);
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Utama</h1>
-        <p className="text-gray-500 mt-1">Selamat datang di Percegi Coffee — ringkasan performa bisnis Anda.</p>
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-10">
+      
+      {/* 1. Hero / Welcome Banner */}
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-amber-700 to-amber-950 p-8 sm:p-10 text-white shadow-xl">
+        <div className="absolute -right-10 -top-10 opacity-20 pointer-events-none">
+          <Coffee size={250} className="transform rotate-12" />
+        </div>
+        <div className="relative z-10 max-w-2xl">
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-3 text-amber-50">Selamat Pagi, Percegi! ☕</h1>
+          <p className="text-amber-200 text-lg mb-8">Ringkasan hari ini terlihat menjanjikan. Mari optimalkan penjualan Anda hari ini.</p>
+          
+          <div className="flex flex-wrap gap-4 sm:gap-6">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 min-w-[160px]">
+              <p className="text-amber-100 text-sm font-medium">Pendapatan Hari Ini</p>
+              <p className="text-2xl font-black text-white mt-1">{formatRp(todayRevenue)}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 min-w-[160px]">
+              <p className="text-amber-100 text-sm font-medium">Transaksi Hari Ini</p>
+              <p className="text-2xl font-black text-white mt-1">{todayOrdersCount} Pesanan</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(card => (
-          <div
-            key={card.tab}
-            onClick={() => setActiveTab(card.tab)}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer group"
+      {/* 2. Bento Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Chart (Span 2) */}
+        <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 flex flex-col relative overflow-hidden group">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Performa Keuangan</h2>
+              <p className="text-sm text-gray-500">{periodLabel}</p>
+            </div>
+            <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+              {[ { v: 1, l: '1 Hari' }, { v: 7, l: '7 Hari' }, { v: 30, l: '30 Hari' } ].map(p => (
+                <button
+                  key={p.v} onClick={() => setPeriod(p.v)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                    period === p.v ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {p.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6 mb-6">
+            <div>
+              <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-1">Pendapatan</p>
+              <p className="text-xl sm:text-2xl font-black text-gray-900">{formatRp(totalRevenue)}</p>
+            </div>
+            <div className="w-px h-10 bg-gray-200"></div>
+            <div>
+              <p className="text-xs text-rose-600 font-bold uppercase tracking-wider mb-1">Pengeluaran</p>
+              <p className="text-xl sm:text-2xl font-black text-gray-900">{formatRp(totalExpense)}</p>
+            </div>
+            <div className="w-px h-10 bg-gray-200 hidden sm:block"></div>
+            <div className="hidden sm:block">
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${totalProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>Laba Kotor</p>
+              <p className={`text-2xl font-black ${totalProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{formatRp(totalProfit)}</p>
+            </div>
+          </div>
+
+          <div className="h-64 w-full mt-auto">
+            {revenueData.every(v => v === 0) && expenseData.every(v => v === 0) ? (
+              <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-400">
+                <BarChart2 className="w-10 h-10 opacity-30" />
+                <p className="text-sm">Belum ada data transaksi.</p>
+              </div>
+            ) : (
+              <LineChart
+                data={[revenueData, expenseData, profitData]}
+                colors={['#10b981', '#f43f5e', '#6366f1']}
+                labels={chartLabels}
+                width={700} height={240}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Stat Widgets Stack (Span 1) */}
+        <div className="flex flex-col gap-4">
+          <div 
+            onClick={() => setActiveTab('customer')}
+            className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer flex-1 flex flex-col justify-center"
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${card.bg} group-hover:scale-110 transition-transform`}>
-              {card.icon}
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{card.label}</p>
-              <p className="text-3xl font-bold text-gray-900 leading-tight">{card.value}</p>
+            <Users size={100} className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500" />
+            <div className="relative z-10">
+              <p className="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">Total Customer</p>
+              <p className="text-4xl font-black">{customers.length}</p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Revenue Chart */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        {/* Chart header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <BarChart2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-900">Grafik Keuangan</h2>
-              <p className="text-xs text-gray-500">{periodLabel}</p>
+          <div 
+            onClick={() => setActiveTab('product')}
+            className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer flex-1 flex flex-col justify-center"
+          >
+            <Coffee size={100} className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500" />
+            <div className="relative z-10">
+              <p className="text-amber-100 text-sm font-bold uppercase tracking-wider mb-1">Menu Aktif</p>
+              <p className="text-4xl font-black">{products.length}</p>
             </div>
           </div>
-          {/* Period Toggle */}
-          <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-            {[
-              { v: 1, l: '1 Hari' },
-              { v: 7, l: '7 Hari' },
-              { v: 30, l: '30 Hari' }
-            ].map(p => (
-              <button
-                key={p.v}
-                onClick={() => setPeriod(p.v)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                  period === p.v
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {p.l}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Summary chips */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-          <div className="bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
-            <TrendingUp className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <div>
-              <p className="text-xs text-emerald-600 font-medium">Pendapatan</p>
-              <p className="text-sm font-bold text-emerald-700">{formatRp(totalRevenue)}</p>
-            </div>
-          </div>
-          <div className="bg-rose-50 rounded-xl p-3 flex items-center gap-3">
-            <TrendingDown className="w-5 h-5 text-rose-600 flex-shrink-0" />
-            <div>
-              <p className="text-xs text-rose-600 font-medium">Pengeluaran</p>
-              <p className="text-sm font-bold text-rose-700">{formatRp(totalExpense)}</p>
-            </div>
-          </div>
-          <div className={`rounded-xl p-3 flex items-center gap-3 ${totalProfit >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
-            {totalProfit >= 0
-              ? <ArrowUpRight className="w-5 h-5 text-blue-600 flex-shrink-0" />
-              : <ArrowDownRight className="w-5 h-5 text-orange-600 flex-shrink-0" />
-            }
-            <div>
-              <p className={`text-xs font-medium ${totalProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                Laba Kotor
-              </p>
-              <p className={`text-sm font-bold ${totalProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                {formatRp(totalProfit)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Chart */}
-        <div className="h-56 w-full">
-          {revenueData.every(v => v === 0) && expenseData.every(v => v === 0) ? (
-            <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-400">
-              <BarChart2 className="w-10 h-10 opacity-30" />
-              <p className="text-sm">Belum ada data transaksi pada periode ini.</p>
-              <p className="text-xs">Buat Sales Order atau Purchase Order terlebih dahulu.</p>
-            </div>
-          ) : (
-            <LineChart
-              data={[revenueData, expenseData, profitData]}
-              colors={['#10b981', '#f43f5e', '#6366f1']}
-              labels={chartLabels}
-              width={700}
-              height={220}
-            />
-          )}
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center gap-6 mt-3 justify-center">
-          {[
-            { color: '#10b981', label: 'Pendapatan' },
-            { color: '#f43f5e', label: 'Pengeluaran' },
-            { color: '#6366f1', label: 'Laba Kotor' },
-          ].map(l => (
-            <div key={l.label} className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full inline-block" style={{ background: l.color }} />
-              <span className="text-xs text-gray-500">{l.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom: SO + PO Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Sales Orders */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <ClipboardList className="w-4 h-4" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-sm">Order Terbaru (SO)</h3>
-            </div>
-            <button
+          <div className="flex gap-4 flex-1">
+            <div 
               onClick={() => setActiveTab('so')}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+              className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group cursor-pointer flex-1 flex flex-col justify-center hover:border-emerald-200 transition-colors"
             >
-              Lihat semua →
-            </button>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {recentSO.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-400 text-sm">
-                Belum ada Sales Order.
+              <ShoppingCart size={60} className="absolute -right-4 -bottom-4 text-emerald-50 group-hover:scale-110 transition-transform duration-500" />
+              <div className="relative z-10">
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Sales</p>
+                <p className="text-2xl font-black text-gray-800">{salesOrders.length}</p>
               </div>
-            ) : recentSO.map(so => (
-              <div key={so.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-mono font-bold text-amber-600">{so.soNumber}</span>
-                  <span className="text-xs text-gray-500">{formatDate(so.date)}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-900">{formatRp(so.total)}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                    so.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                  }`}>
-                    {so.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Purchase Orders */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-                <Truck className="w-4 h-4" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-sm">Purchase Order Terbaru</h3>
             </div>
-            <button
+            <div 
               onClick={() => setActiveTab('po')}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+              className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group cursor-pointer flex-1 flex flex-col justify-center hover:border-rose-200 transition-colors"
             >
-              Lihat semua →
-            </button>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {recentPO.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-400 text-sm">
-                Belum ada Purchase Order.
+              <Package size={60} className="absolute -right-4 -bottom-4 text-rose-50 group-hover:scale-110 transition-transform duration-500" />
+              <div className="relative z-10">
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Purchase</p>
+                <p className="text-2xl font-black text-gray-800">{purchaseOrders.length}</p>
               </div>
-            ) : recentPO.map(po => (
-              <div key={po.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-mono font-bold text-amber-600">{po.poNumber}</span>
-                  <span className="text-xs text-gray-500">{formatDate(po.date)}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-900">{formatRp(po.total)}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                    po.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                  }`}>
-                    {po.status}
-                  </span>
-                </div>
-              </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Analytics Lists: Top Customers & Best Sellers */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
-        {/* Top Customers */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                <Award className="w-4 h-4" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-sm">Customer Terbaik</h3>
-            </div>
+      {/* 3. Bottom Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Timeline Feed */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-1">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Aktivitas Terkini</h3>
           </div>
-          <div className="divide-y divide-gray-50">
-            {topCustomers.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-400 text-sm">
-                Belum ada data customer.
-              </div>
-            ) : topCustomers.map((c, idx) => (
-              <div key={c.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-200 text-gray-700' : idx === 2 ? 'bg-orange-100 text-orange-800' : 'bg-gray-50 text-gray-400'}`}>
-                    {idx + 1}
-                  </span>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-bold text-gray-900">{c.name}</span>
-                    <span className="text-xs text-gray-500">{c.totalQty} items dibeli</span>
+          <div className="relative">
+            <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-100"></div>
+            <div className="flex flex-col gap-6">
+              {[...salesOrders.map(s => ({...s, type: 'SO'})), ...purchaseOrders.map(p => ({...p, type: 'PO'}))]
+                .sort((a,b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 6)
+                .map((trx, idx) => (
+                <div key={idx} className="flex gap-4 relative z-10">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-4 border-white shadow-sm ${trx.type === 'SO' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                    {trx.type === 'SO' ? <ClipboardList size={14} /> : <Truck size={14} />}
+                  </div>
+                  <div className="flex-1 pb-1">
+                    <p className="text-sm font-bold text-gray-900">{trx.type === 'SO' ? trx.soNumber : trx.poNumber}</p>
+                    <p className="text-xs text-gray-500 mb-1">{formatDate(trx.date)} • {trx.status}</p>
+                    <p className={`text-sm font-bold ${trx.type === 'SO' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {trx.type === 'SO' ? '+' : '-'}{formatRp(trx.total)}
+                    </p>
                   </div>
                 </div>
-                <div className="text-sm font-bold text-emerald-600">
-                  {formatRp(c.totalAmount)}
-                </div>
-              </div>
-            ))}
+              ))}
+              {salesOrders.length === 0 && purchaseOrders.length === 0 && (
+                 <div className="text-sm text-gray-400 pl-10">Belum ada aktivitas.</div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Best Sellers */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                <Star className="w-4 h-4" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-sm">Menu Terlaris</h3>
-            </div>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {topProducts.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-400 text-sm">
-                Belum ada data produk terjual.
-              </div>
-            ) : topProducts.map((p, idx) => (
-              <div key={idx} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-200 text-gray-700' : idx === 2 ? 'bg-orange-100 text-orange-800' : 'bg-gray-50 text-gray-400'}`}>
-                    {idx + 1}
-                  </span>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-bold text-gray-900">{p.name}</span>
-                    <span className="text-xs text-gray-500">{p.totalQty} terjual</span>
+        {/* Top Performers (Span 2) */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          
+          {/* Top Customers (Medals style) */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Award className="text-amber-500" /> Pelanggan Paling Setia
+            </h3>
+            <div className="flex overflow-x-auto gap-4 pb-4 custom-scrollbar">
+              {topCustomers.length === 0 ? (
+                <div className="text-sm text-gray-400">Belum ada data pelanggan.</div>
+              ) : topCustomers.map((c, idx) => (
+                <div key={c.id} className="min-w-[160px] flex-shrink-0 bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col items-center text-center relative hover:bg-gray-100 transition-colors cursor-pointer group">
+                  <div className={`absolute -top-3 -right-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-md ${idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-orange-400' : 'bg-blue-400'}`}>
+                    #{idx + 1}
+                  </div>
+                  <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl font-black mb-3 group-hover:scale-110 transition-transform">
+                    {c.name.charAt(0).toUpperCase()}
+                  </div>
+                  <p className="font-bold text-gray-900 text-sm truncate w-full">{c.name}</p>
+                  <p className="text-xs text-gray-500 mt-1">{c.totalQty} items</p>
+                  <div className="mt-3 bg-white w-full py-1.5 rounded-lg text-xs font-bold text-emerald-600 border border-gray-100 shadow-sm">
+                    {formatRp(c.totalAmount)}
                   </div>
                 </div>
-                <div className="text-sm font-bold text-indigo-600">
-                  {formatRp(p.totalAmount)}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
+          {/* Best Sellers (Progress Bars) */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Star className="text-amber-500" /> Menu Terlaris (Top 5)
+            </h3>
+            <div className="flex flex-col gap-5">
+              {topProducts.length === 0 ? (
+                <div className="text-sm text-gray-400">Belum ada data menu.</div>
+              ) : topProducts.map((p, idx) => {
+                const maxQty = topProducts[0].totalQty || 1;
+                const percentage = Math.round((p.totalQty / maxQty) * 100);
+                return (
+                  <div key={idx} className="flex flex-col gap-2">
+                    <div className="flex justify-between items-end">
+                      <div className="flex items-center gap-2">
+                         <span className="font-bold text-gray-900">{p.name}</span>
+                         {idx === 0 && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">BEST</span>}
+                      </div>
+                      <div className="text-xs font-bold text-gray-600">{p.totalQty} terjual</div>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 ${idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-orange-400' : 'bg-blue-400'}`}
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
         </div>
       </div>
+
     </div>
   );
 };
