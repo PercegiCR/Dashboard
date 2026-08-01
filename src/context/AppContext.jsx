@@ -68,6 +68,25 @@ const initialPurchaseOrders = [
   { id: 'PO6', poNumber: 'PO-006', date: dateOffset(28), vendorId: 'V2', items: [{ name: 'Gula Aren', qty: 8, price: 30000, subtotal: 240000, unit: 'kg' }], total: 240000, status: 'Lunas' },
 ];
 
+const convertQty = (qty, fromUnit, toUnit) => {
+  if (!fromUnit || !toUnit) return qty;
+  
+  const f = fromUnit.toLowerCase();
+  const t = toUnit.toLowerCase();
+  
+  if (f === t) return qty;
+  
+  // Weight
+  if (f === 'gram' && (t === 'kg' || t === 'kilogram')) return qty / 1000;
+  if ((f === 'kg' || f === 'kilogram') && t === 'gram') return qty * 1000;
+  
+  // Volume
+  if (f === 'ml' && (t === 'liter' || t === 'l')) return qty / 1000;
+  if ((f === 'liter' || f === 'l') && t === 'ml') return qty * 1000;
+  
+  return qty;
+};
+
 export const AppProvider = ({ children }) => {
   const [vendors, setVendors] = useState(() => loadData('vendors', initialVendors));
   const [customers, setCustomers] = useState(() => loadData('customers', initialCustomers));
@@ -121,9 +140,12 @@ export const AppProvider = ({ children }) => {
         let invCopy = [...prevInv];
         for (const r of (product.recipe || [])) {
           const invItem = invCopy.find(i => i.id === r.inventoryId);
-          if (!invItem || invItem.stock < (r.qty * qty)) {
+          if (!invItem) continue;
+          
+          const neededQty = convertQty(r.qty * qty, r.unit, invItem.unit);
+          if (invItem.stock < neededQty) {
             canProduce = false;
-            message = `Stok bahan ${invItem ? invItem.name : 'Unknown'} tidak mencukupi untuk memproduksi ${qty} item.`;
+            message = `Stok bahan ${invItem.name} tidak mencukupi untuk memproduksi ${qty} item. (Butuh ${neededQty} ${invItem.unit})`;
             return prevInv; // abort
           }
         }
@@ -133,7 +155,8 @@ export const AppProvider = ({ children }) => {
           for (const r of (product.recipe || [])) {
             const invIndex = invCopy.findIndex(i => i.id === r.inventoryId);
             if (invIndex !== -1) {
-              invCopy[invIndex] = { ...invCopy[invIndex], stock: invCopy[invIndex].stock - (r.qty * qty) };
+              const neededQty = convertQty(r.qty * qty, r.unit, invCopy[invIndex].unit);
+              invCopy[invIndex] = { ...invCopy[invIndex], stock: invCopy[invIndex].stock - neededQty };
             }
           }
           return invCopy;

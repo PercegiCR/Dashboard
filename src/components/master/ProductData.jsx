@@ -8,6 +8,7 @@ const ProductData = () => {
   const [formData, setFormData] = useState({ id: null, code: '', name: '', category: '', price: 0, recipe: [] });
   const [selectedInv, setSelectedInv] = useState('');
   const [invQty, setInvQty] = useState('');
+  const [invUnit, setInvUnit] = useState('gram');
 
   const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
   const [produceData, setProduceData] = useState({ productId: null, productName: '', qty: 1 });
@@ -28,10 +29,11 @@ const ProductData = () => {
     
     setFormData({
       ...formData,
-      recipe: [...(formData.recipe || []), { inventoryId: invItem.id, qty: Number(invQty) }]
+      recipe: [...(formData.recipe || []), { inventoryId: invItem.id, qty: Number(invQty), unit: invUnit }]
     });
     setSelectedInv('');
     setInvQty('');
+    setInvUnit('gram');
   };
 
   const handleRemoveRecipeItem = (index) => {
@@ -206,6 +208,17 @@ const ProductData = () => {
                     className="w-24 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     value={invQty} onChange={e => setInvQty(e.target.value)}
                   />
+                  <select
+                    className="w-24 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    value={invUnit} onChange={e => setInvUnit(e.target.value)}
+                  >
+                    <option value="gram">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="liter">L</option>
+                    <option value="pcs">pcs</option>
+                    <option value="box">box</option>
+                  </select>
                   <button 
                     type="button" onClick={handleAddRecipeItem}
                     className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors"
@@ -229,7 +242,7 @@ const ProductData = () => {
                         return (
                           <tr key={idx} className="border-t border-gray-100">
                             <td className="p-2">{invItem ? invItem.name : 'Unknown'}</td>
-                            <td className="p-2 text-right">{r.qty} {invItem ? invItem.unit : ''}</td>
+                            <td className="p-2 text-right">{r.qty} {r.unit || (invItem ? invItem.unit : '')}</td>
                             <td className="p-2 text-center">
                               <button type="button" onClick={() => handleRemoveRecipeItem(idx)} className="text-red-500 hover:text-red-700"><X size={12} /></button>
                             </td>
