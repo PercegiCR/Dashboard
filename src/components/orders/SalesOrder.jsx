@@ -13,7 +13,8 @@ const SalesOrder = ({ setActiveTab }) => {
   const [qty, setQty] = useState(1);
   const [itemNotes, setItemNotes] = useState('');
   const [sugarLevel, setSugarLevel] = useState('Normal');
-  const [extraSugarCost, setExtraSugarCost] = useState(0);
+  const [extraShotCost, setExtraShotCost] = useState(0);
+  const [temperature, setTemperature] = useState('Normal');
 
   const handleOpenModal = () => {
     setFormData({ id: null, customerId: '', status: 'Pending', items: [] });
@@ -35,7 +36,7 @@ const SalesOrder = ({ setActiveTab }) => {
     const product = products.find(p => p.id === selectedProduct);
     if (!product) return;
 
-    const additionalCost = sugarLevel === 'Extra Sugar' ? Number(extraSugarCost) : 0;
+    const additionalCost = sugarLevel === 'Extra Shot' ? Number(extraShotCost) : 0;
     const finalPrice = product.price + additionalCost;
 
     const newItem = {
@@ -44,7 +45,8 @@ const SalesOrder = ({ setActiveTab }) => {
       price: product.price,
       qty: Number(qty),
       sugarLevel,
-      extraSugarCost: additionalCost,
+      extraShotCost: additionalCost,
+      temperature,
       notes: itemNotes,
       subtotal: finalPrice * Number(qty)
     };
@@ -57,7 +59,8 @@ const SalesOrder = ({ setActiveTab }) => {
     setQty(1);
     setItemNotes('');
     setSugarLevel('Normal');
-    setExtraSugarCost(0);
+    setExtraShotCost(0);
+    setTemperature('Normal');
   };
 
   const removeItem = (index) => {
@@ -223,24 +226,32 @@ const SalesOrder = ({ setActiveTab }) => {
                       value={qty} onChange={e => setQty(e.target.value)}
                     />
                     <select
-                      className="w-full sm:w-36 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-full sm:w-32 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                       value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
                     >
                       <option value="Normal">Normal</option>
                       <option value="Less Sugar">Less Sugar</option>
                       <option value="No Sugar">No Sugar</option>
-                      <option value="Extra Sugar">Extra Sugar</option>
+                      <option value="Extra Shot">Extra Shot</option>
+                    </select>
+                    <select
+                      className="w-full sm:w-32 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={temperature} onChange={e => setTemperature(e.target.value)}
+                    >
+                      <option value="Normal">Normal</option>
+                      <option value="Hot">Hot</option>
+                      <option value="Ice">Ice</option>
                     </select>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                    {sugarLevel === 'Extra Sugar' && (
+                    {sugarLevel === 'Extra Shot' && (
                       <div className="w-full sm:w-36">
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Biaya Extra Sugar</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Biaya Extra Shot</label>
                         <input 
                           type="number" min="0" placeholder="Nominal"
                           className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                          value={extraSugarCost} onChange={e => setExtraSugarCost(e.target.value)}
+                          value={extraShotCost} onChange={e => setExtraShotCost(e.target.value)}
                         />
                       </div>
                     )}
@@ -279,8 +290,11 @@ const SalesOrder = ({ setActiveTab }) => {
                           <td className="p-2 text-gray-800 font-medium">{item.name}</td>
                           <td className="p-2 text-gray-500 text-xs">
                             <div className="flex flex-col gap-0.5">
+                              {item.temperature && item.temperature !== 'Normal' && (
+                                <span>Temp: {item.temperature}</span>
+                              )}
                               {item.sugarLevel && item.sugarLevel !== 'Normal' && (
-                                <span>Sugar: {item.sugarLevel} {item.extraSugarCost > 0 ? `(+${formatRp(item.extraSugarCost)})` : ''}</span>
+                                <span>Sugar/Shot: {item.sugarLevel} {item.extraShotCost > 0 ? `(+${formatRp(item.extraShotCost)})` : ''}</span>
                               )}
                               {item.notes && <span>Notes: {item.notes}</span>}
                             </div>
