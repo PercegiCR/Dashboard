@@ -205,11 +205,11 @@ const ProductData = () => {
                   </select>
                   <input 
                     type="number" min="0.01" step="0.01" placeholder="Takaran"
-                    className="w-24 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-20 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     value={invQty} onChange={e => setInvQty(e.target.value)}
                   />
                   <select
-                    className="w-24 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-16 bg-white border border-gray-300 rounded-lg px-1 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     value={invUnit} onChange={e => setInvUnit(e.target.value)}
                   >
                     <option value="gram">g</option>
@@ -221,7 +221,7 @@ const ProductData = () => {
                   </select>
                   <button 
                     type="button" onClick={handleAddRecipeItem}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors"
+                    className="whitespace-nowrap flex-shrink-0 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors"
                   >
                     Tambah
                   </button>
