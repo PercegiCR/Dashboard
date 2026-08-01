@@ -49,7 +49,7 @@ const SalesOrder = ({ setActiveTab }) => {
       }
       const product = products.find(p => String(p.id) === String(selectedProduct));
       if (!product) {
-        alert("Produk tidak ditemukan!");
+        alert("Produk tidak ditemukan! ID yg dicari: '" + selectedProduct + "'. ID tersedia: " + products.map(p=>`'${p.id}'`).join(", "));
         return;
       }
 

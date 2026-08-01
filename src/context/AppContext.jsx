@@ -7,7 +7,21 @@ export const useAppContext = () => useContext(AppContext);
 // Helper to load from localStorage
 const loadData = (key, defaultData) => {
   const saved = localStorage.getItem(key);
-  if (saved) return JSON.parse(saved);
+  if (saved) {
+    let parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) {
+      let changed = false;
+      parsed = parsed.map((item, idx) => {
+        if (!item.id) {
+          changed = true;
+          return { ...item, id: `${key.charAt(0).toUpperCase()}${Date.now()}${idx}` };
+        }
+        return item;
+      });
+      if (changed) localStorage.setItem(key, JSON.stringify(parsed));
+    }
+    return parsed;
+  }
   return defaultData;
 };
 
@@ -104,19 +118,31 @@ export const AppProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('purchaseOrders', JSON.stringify(purchaseOrders)), [purchaseOrders]);
 
   // Actions
-  const addVendor = (vendor) => setVendors([...vendors, { id: `V${Date.now()}`, ...vendor }]);
+  const addVendor = (vendor) => {
+    const { id, ...rest } = vendor;
+    setVendors([...vendors, { id: `V${Date.now()}`, ...rest }]);
+  };
   const updateVendor = (id, vendor) => setVendors(vendors.map(v => v.id === id ? { ...v, ...vendor } : v));
   const deleteVendor = (id) => setVendors(vendors.filter(v => v.id !== id));
 
-  const addCustomer = (customer) => setCustomers([...customers, { id: `C${Date.now()}`, ...customer }]);
+  const addCustomer = (customer) => {
+    const { id, ...rest } = customer;
+    setCustomers([...customers, { id: `C${Date.now()}`, ...rest }]);
+  };
   const updateCustomer = (id, customer) => setCustomers(customers.map(c => c.id === id ? { ...c, ...customer } : c));
   const deleteCustomer = (id) => setCustomers(customers.filter(c => c.id !== id));
 
-  const addInventory = (item) => setInventory([...inventory, { id: `I${Date.now()}`, ...item }]);
+  const addInventory = (item) => {
+    const { id, ...rest } = item;
+    setInventory([...inventory, { id: `I${Date.now()}`, ...rest }]);
+  };
   const updateInventory = (id, item) => setInventory(inventory.map(i => i.id === id ? { ...i, ...item } : i));
   const deleteInventory = (id) => setInventory(inventory.filter(i => i.id !== id));
 
-  const addProduct = (product) => setProducts([...products, { id: `P${Date.now()}`, stock: 0, recipe: [], ...product }]);
+  const addProduct = (product) => {
+    const { id, ...rest } = product;
+    setProducts([...products, { id: `P${Date.now()}`, stock: 0, recipe: [], ...rest }]);
+  };
   const updateProduct = (id, product) => setProducts(products.map(p => p.id === id ? { ...p, ...product } : p));
   const deleteProduct = (id) => setProducts(products.filter(p => p.id !== id));
 
@@ -178,7 +204,8 @@ export const AppProvider = ({ children }) => {
   };
 
   const addSalesOrder = (so) => {
-    setSalesOrders(prev => [...prev, { id: `SO-${Date.now()}`, soNumber: `SO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...so }]);
+    const { id, ...rest } = so;
+    setSalesOrders(prev => [...prev, { id: `SO-${Date.now()}`, soNumber: `SO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...rest }]);
     // Deduct product stock
     setProducts(prevProducts => {
       let updatedProducts = [...prevProducts];
@@ -210,7 +237,8 @@ export const AppProvider = ({ children }) => {
   };
 
   const addPurchaseOrder = (po) => {
-    setPurchaseOrders([...purchaseOrders, { id: `PO-${Date.now()}`, poNumber: `PO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...po }]);
+    const { id, ...rest } = po;
+    setPurchaseOrders([...purchaseOrders, { id: `PO-${Date.now()}`, poNumber: `PO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...rest }]);
   };
   const updatePurchaseOrder = (id, po) => setPurchaseOrders(purchaseOrders.map(p => p.id === id ? { ...p, ...po } : p));
   const deletePurchaseOrder = (id) => setPurchaseOrders(purchaseOrders.filter(p => p.id !== id));
