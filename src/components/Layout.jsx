@@ -27,8 +27,8 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
       {/* SIDEBAR KIRI */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col h-full shadow-2xl flex-shrink-0 print:hidden">
         <div className="p-6 text-xl font-bold border-b border-slate-800 flex items-center gap-3">
-          <div className="text-amber-500 bg-amber-500/10 p-2 rounded-lg">
-            <Coffee className="w-6 h-6" />
+          <div className="bg-white/10 p-1.5 rounded-lg flex items-center justify-center">
+            <img src="/logo.png" alt="Percegi Coffee Logo" className="w-8 h-8 object-contain drop-shadow-md" />
           </div>
           Percegi Coffee
         </div>
@@ -39,8 +39,8 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all duration-200 ${
                 activeTab === item.id 
-                  ? 'bg-blue-600 text-white shadow-md' 
-                  : 'text-slate-400 hover:bg-blue-600 hover:text-white'
+                  ? 'bg-amber-600 text-white shadow-md' 
+                  : 'text-slate-400 hover:bg-amber-600 hover:text-white'
               }`}
             >
               {item.icon}
@@ -58,7 +58,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
             {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">
               AD
             </div>
           </div>
