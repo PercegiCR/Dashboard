@@ -499,10 +499,10 @@ const Dashboard = ({ setActiveTab }) => {
           
           {/* Top Customers (Medals style) */}
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
               <Award className="text-amber-500" /> Pelanggan Paling Setia
             </h3>
-            <div className="flex overflow-x-auto gap-4 pb-4 custom-scrollbar">
+            <div className="flex overflow-x-auto gap-4 pt-4 pb-4 custom-scrollbar">
               {topCustomers.length === 0 ? (
                 <div className="text-sm text-gray-400">Belum ada data pelanggan.</div>
               ) : topCustomers.map((c, idx) => (
