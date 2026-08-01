@@ -326,7 +326,7 @@ const Dashboard = ({ setActiveTab }) => {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map(card => (
           <div
             key={card.tab}
@@ -380,7 +380,7 @@ const Dashboard = ({ setActiveTab }) => {
         </div>
 
         {/* Summary chips */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           <div className="bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
             <TrendingUp className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <div>

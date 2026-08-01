@@ -105,7 +105,8 @@ const SalesOrder = ({ setActiveTab }) => {
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider border-b border-gray-200">
               <th className="p-4 font-semibold">No. SO</th>
@@ -147,11 +148,12 @@ const SalesOrder = ({ setActiveTab }) => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-overlay">
-          <div className="bg-white p-6 rounded-xl w-full max-w-2xl shadow-2xl animate-popup">
+          <div className="bg-white p-6 rounded-xl w-full max-w-3xl shadow-2xl animate-popup max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900">Buat Sales Order Baru</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -160,7 +162,7 @@ const SalesOrder = ({ setActiveTab }) => {
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col gap-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
                   <select 
@@ -188,7 +190,7 @@ const SalesOrder = ({ setActiveTab }) => {
               <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Item Pesanan</h3>
                 <div className="flex flex-col gap-3 mb-4 border border-gray-100 p-3 rounded-lg bg-white">
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                     <select 
                       className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                       value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
@@ -198,11 +200,11 @@ const SalesOrder = ({ setActiveTab }) => {
                     </select>
                     <input 
                       type="number" min="1" placeholder="Qty"
-                      className="w-20 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-full sm:w-20 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                       value={qty} onChange={e => setQty(e.target.value)}
                     />
                     <select
-                      className="w-36 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-full sm:w-36 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                       value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
                     >
                       <option value="Normal">Normal</option>
@@ -212,9 +214,9 @@ const SalesOrder = ({ setActiveTab }) => {
                     </select>
                   </div>
                   
-                  <div className="flex gap-3 items-end">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
                     {sugarLevel === 'Extra Sugar' && (
-                      <div className="w-36">
+                      <div className="w-full sm:w-36">
                         <label className="block text-xs font-medium text-gray-500 mb-1">Biaya Extra Sugar</label>
                         <input 
                           type="number" min="0" placeholder="Nominal"
@@ -233,15 +235,15 @@ const SalesOrder = ({ setActiveTab }) => {
                     </div>
                     <button 
                       type="button" onClick={addItem}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-sm h-[42px]"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-sm h-[42px] w-full sm:w-auto"
                     >
                       Tambah
                     </button>
                   </div>
                 </div>
 
-                <div className="max-h-56 overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-sm text-left border-collapse">
+                <div className="max-h-56 overflow-y-auto overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
                     <thead className="bg-gray-100 sticky top-0">
                       <tr className="text-gray-600">
                         <th className="p-2 font-medium border-b border-gray-200">Produk</th>

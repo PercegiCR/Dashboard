@@ -52,7 +52,8 @@ const InventoryData = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider border-b border-gray-200">
               <th className="p-4 font-semibold">Kode</th>
@@ -89,11 +90,12 @@ const InventoryData = () => {
             ))}
             {inventory.length === 0 && (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-gray-500">Belum ada data inventory.</td>
+                <td colSpan="7" className="p-8 text-center text-gray-500">Belum ada data inventory.</td>
               </tr>
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {isModalOpen && (

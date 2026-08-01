@@ -112,7 +112,8 @@ const PurchaseOrder = ({ setActiveTab }) => {
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider border-b border-gray-200">
               <th className="p-4 font-semibold">No. PO</th>
@@ -154,6 +155,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {isModalOpen && (
@@ -167,7 +169,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col gap-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Vendor (Supplier)</label>
                   <select 
@@ -194,7 +196,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
 
               <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Item Pembelian</h3>
-                <div className="flex gap-3 mb-4">
+                <div className="flex flex-col sm:flex-row gap-3 mb-4 items-stretch sm:items-center">
                   <select 
                     className="flex-[2] bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     value={selectedInventory} onChange={handleInventoryChange}
@@ -209,19 +211,19 @@ const PurchaseOrder = ({ setActiveTab }) => {
                   />
                   <input 
                     type="number" min="0.01" step="0.01" placeholder="Qty"
-                    className="w-24 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="flex-1 sm:w-24 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     value={qty} onChange={e => setQty(e.target.value)}
                   />
                   <button 
                     type="button" onClick={addItem}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap"
                   >
                     Tambah
                   </button>
                 </div>
 
-                <div className="max-h-40 overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-sm text-left border-collapse">
+                <div className="max-h-40 overflow-y-auto overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
                     <thead className="bg-gray-100 sticky top-0">
                       <tr className="text-gray-600">
                         <th className="p-2 font-medium border-b border-gray-200">Barang</th>
