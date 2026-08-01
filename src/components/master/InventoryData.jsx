@@ -149,6 +149,7 @@ const InventoryData = () => {
                   >
                     <option value="">Pilih...</option>
                     <option value="kg">Kilogram (kg)</option>
+                    <option value="gram">Gram (g)</option>
                     <option value="liter">Liter (l)</option>
                     <option value="pcs">Pieces (pcs)</option>
                     <option value="box">Box</option>
