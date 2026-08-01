@@ -37,13 +37,13 @@ const PurchaseOrder = ({ setActiveTab }) => {
   const handleInventoryChange = (e) => {
     const id = e.target.value;
     setSelectedInventory(id);
-    const item = inventory.find(i => i.id === id);
+    const item = inventory.find(i => String(i.id) === String(id));
     if (item) setPrice(item.price);
   };
 
   const addItem = () => {
     if (!selectedInventory || qty <= 0 || price < 0) return;
-    const item = inventory.find(i => i.id === selectedInventory);
+    const item = inventory.find(i => String(i.id) === String(selectedInventory));
     if (!item) return;
 
     const newItem = {

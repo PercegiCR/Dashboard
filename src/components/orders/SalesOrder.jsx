@@ -39,7 +39,7 @@ const SalesOrder = ({ setActiveTab }) => {
 
   const addItem = () => {
     if (!selectedProduct || qty <= 0) return;
-    const product = products.find(p => p.id === selectedProduct);
+    const product = products.find(p => String(p.id) === String(selectedProduct));
     if (!product) return;
 
     const additionalCost = sugarLevel === 'Extra Shot' ? Number(extraShotCost) : 0;

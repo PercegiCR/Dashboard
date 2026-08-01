@@ -24,7 +24,7 @@ const ProductData = () => {
 
   const handleAddRecipeItem = () => {
     if (!selectedInv || !invQty || invQty <= 0) return;
-    const invItem = inventory.find(i => i.id === selectedInv);
+    const invItem = inventory.find(i => String(i.id) === String(selectedInv));
     if (!invItem) return;
     
     setFormData({
