@@ -37,10 +37,10 @@ const initialInventory = [
 ];
 
 const initialProducts = [
-  { id: 'P1', code: 'PRD-001', name: 'Kopi Susu Aren', price: 28000, category: 'Minuman' },
-  { id: 'P2', code: 'PRD-002', name: 'Americano', price: 22000, category: 'Minuman' },
-  { id: 'P3', code: 'PRD-003', name: 'Cappuccino', price: 30000, category: 'Minuman' },
-  { id: 'P4', code: 'PRD-004', name: 'Matcha Latte', price: 32000, category: 'Minuman' },
+  { id: 'P1', code: 'PRD-001', name: 'Kopi Susu Aren', price: 28000, category: 'Minuman', stock: 10, recipe: [{inventoryId: 'I1', qty: 0.02}, {inventoryId: 'I2', qty: 0.15}, {inventoryId: 'I3', qty: 0.02}] },
+  { id: 'P2', code: 'PRD-002', name: 'Americano', price: 22000, category: 'Minuman', stock: 20, recipe: [{inventoryId: 'I1', qty: 0.02}] },
+  { id: 'P3', code: 'PRD-003', name: 'Cappuccino', price: 30000, category: 'Minuman', stock: 15, recipe: [{inventoryId: 'I1', qty: 0.02}, {inventoryId: 'I2', qty: 0.2}] },
+  { id: 'P4', code: 'PRD-004', name: 'Matcha Latte', price: 32000, category: 'Minuman', stock: 5, recipe: [{inventoryId: 'I2', qty: 0.2}] },
 ];
 
 // Demo Sales Orders with spread-out dates (last 30 days)
@@ -97,27 +97,108 @@ export const AppProvider = ({ children }) => {
   const updateInventory = (id, item) => setInventory(inventory.map(i => i.id === id ? { ...i, ...item } : i));
   const deleteInventory = (id) => setInventory(inventory.filter(i => i.id !== id));
 
-  const addProduct = (product) => setProducts([...products, { id: `P${Date.now()}`, ...product }]);
+  const addProduct = (product) => setProducts([...products, { id: `P${Date.now()}`, stock: 0, recipe: [], ...product }]);
   const updateProduct = (id, product) => setProducts(products.map(p => p.id === id ? { ...p, ...product } : p));
   const deleteProduct = (id) => setProducts(products.filter(p => p.id !== id));
 
+  const produceProduct = (productId, qty) => {
+    let success = true;
+    let message = '';
+    
+    setProducts(prevProducts => {
+      const productIndex = prevProducts.findIndex(p => p.id === productId);
+      if (productIndex === -1) {
+        success = false;
+        message = 'Produk tidak ditemukan';
+        return prevProducts;
+      }
+      
+      const product = prevProducts[productIndex];
+      let canProduce = true;
+      
+      // We need to check and deduct inventory, so we do it via setInventory to ensure we have latest state
+      setInventory(prevInv => {
+        let invCopy = [...prevInv];
+        for (const r of (product.recipe || [])) {
+          const invItem = invCopy.find(i => i.id === r.inventoryId);
+          if (!invItem || invItem.stock < (r.qty * qty)) {
+            canProduce = false;
+            message = `Stok bahan ${invItem ? invItem.name : 'Unknown'} tidak mencukupi untuk memproduksi ${qty} item.`;
+            return prevInv; // abort
+          }
+        }
+        
+        if (canProduce) {
+          // deduct
+          for (const r of (product.recipe || [])) {
+            const invIndex = invCopy.findIndex(i => i.id === r.inventoryId);
+            if (invIndex !== -1) {
+              invCopy[invIndex] = { ...invCopy[invIndex], stock: invCopy[invIndex].stock - (r.qty * qty) };
+            }
+          }
+          return invCopy;
+        }
+        return prevInv;
+      });
+
+      if (canProduce) {
+        const newProducts = [...prevProducts];
+        newProducts[productIndex] = { ...product, stock: (product.stock || 0) + Number(qty) };
+        return newProducts;
+      }
+      
+      success = false;
+      return prevProducts;
+    });
+    
+    return { success, message };
+  };
+
   const addSalesOrder = (so) => {
-    setSalesOrders([...salesOrders, { id: `SO-${Date.now()}`, soNumber: `SO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...so }]);
+    setSalesOrders(prev => [...prev, { id: `SO-${Date.now()}`, soNumber: `SO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...so }]);
+    // Deduct product stock
+    setProducts(prevProducts => {
+      let updatedProducts = [...prevProducts];
+      so.items.forEach(item => {
+        const prodIndex = updatedProducts.findIndex(p => p.id === item.productId);
+        if (prodIndex >= 0) {
+          updatedProducts[prodIndex] = { ...updatedProducts[prodIndex], stock: (updatedProducts[prodIndex].stock || 0) - item.qty };
+        }
+      });
+      return updatedProducts;
+    });
   };
   const updateSalesOrder = (id, so) => setSalesOrders(salesOrders.map(s => s.id === id ? { ...s, ...so } : s));
+  const deleteSalesOrder = (id) => {
+    const so = salesOrders.find(s => s.id === id);
+    if (so) {
+      setProducts(prevProducts => {
+        let updatedProducts = [...prevProducts];
+        so.items.forEach(item => {
+          const prodIndex = updatedProducts.findIndex(p => p.id === item.productId);
+          if (prodIndex >= 0) {
+            updatedProducts[prodIndex] = { ...updatedProducts[prodIndex], stock: (updatedProducts[prodIndex].stock || 0) + item.qty };
+          }
+        });
+        return updatedProducts;
+      });
+    }
+    setSalesOrders(salesOrders.filter(s => s.id !== id));
+  };
 
   const addPurchaseOrder = (po) => {
     setPurchaseOrders([...purchaseOrders, { id: `PO-${Date.now()}`, poNumber: `PO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...po }]);
   };
   const updatePurchaseOrder = (id, po) => setPurchaseOrders(purchaseOrders.map(p => p.id === id ? { ...p, ...po } : p));
+  const deletePurchaseOrder = (id) => setPurchaseOrders(purchaseOrders.filter(p => p.id !== id));
 
   const value = {
     vendors, addVendor, updateVendor, deleteVendor,
     customers, addCustomer, updateCustomer, deleteCustomer,
     inventory, addInventory, updateInventory, deleteInventory,
-    products, addProduct, updateProduct, deleteProduct,
-    salesOrders, addSalesOrder, updateSalesOrder,
-    purchaseOrders, addPurchaseOrder, updatePurchaseOrder
+    products, addProduct, updateProduct, deleteProduct, produceProduct,
+    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder,
+    purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
   };
 
   return (

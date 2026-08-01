@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, X, ShoppingCart, Check, FileText, Edit } from 'lucide-react';
+import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2 } from 'lucide-react';
 
 const SalesOrder = ({ setActiveTab }) => {
-  const { salesOrders, customers, products, addSalesOrder, updateSalesOrder } = useAppContext();
+  const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ 
     id: null, customerId: '', status: 'Pending', items: [] 
@@ -97,6 +97,12 @@ const SalesOrder = ({ setActiveTab }) => {
     updateSalesOrder(id, { status: 'Lunas' });
   };
 
+  const handleDeleteSO = (id) => {
+    if (window.confirm('Yakin ingin menghapus Sales Order ini? Stok produk akan dikembalikan.')) {
+      deleteSalesOrder(id);
+    }
+  };
+
   const formatRp = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
   };
@@ -159,6 +165,9 @@ const SalesOrder = ({ setActiveTab }) => {
                   )}
                   <button onClick={() => { localStorage.setItem('print_so', so.id); setActiveTab('invoice_so'); }} title="Cetak Invoice" className="text-blue-500 hover:text-blue-700 transition-colors p-1">
                     <FileText size={18} />
+                  </button>
+                  <button onClick={() => handleDeleteSO(so.id)} title="Hapus SO" className="text-red-500 hover:text-red-700 transition-colors p-1">
+                    <Trash2 size={18} />
                   </button>
                 </td>
               </tr>

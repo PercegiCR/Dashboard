@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, X, ShoppingCart, Check, FileText, Edit } from 'lucide-react';
+import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2 } from 'lucide-react';
 
 const PurchaseOrder = ({ setActiveTab }) => {
-  const { purchaseOrders, vendors, inventory, addPurchaseOrder, updatePurchaseOrder, updateInventory } = useAppContext();
+  const { purchaseOrders, vendors, inventory, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, updateInventory } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ 
     id: null, vendorId: '', status: 'Hutang', items: [] 
@@ -101,6 +101,21 @@ const PurchaseOrder = ({ setActiveTab }) => {
     updatePurchaseOrder(id, { status: 'Lunas' });
   };
 
+  const handleDeletePO = (id) => {
+    if (window.confirm('Yakin ingin menghapus Purchase Order ini? Stok inventory akan dikurangi kembali.')) {
+      const po = purchaseOrders.find(p => p.id === id);
+      if (po) {
+        po.items.forEach(orderItem => {
+          const invItem = inventory.find(i => i.id === orderItem.inventoryId);
+          if (invItem) {
+            updateInventory(invItem.id, { ...invItem, stock: invItem.stock - orderItem.qty });
+          }
+        });
+      }
+      deletePurchaseOrder(id);
+    }
+  };
+
   const formatRp = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
   };
@@ -163,6 +178,9 @@ const PurchaseOrder = ({ setActiveTab }) => {
                   )}
                   <button onClick={() => { localStorage.setItem('print_po', po.id); setActiveTab('invoice_po'); }} title="Cetak PO" className="text-blue-500 hover:text-blue-700 transition-colors p-1">
                     <FileText size={18} />
+                  </button>
+                  <button onClick={() => handleDeletePO(po.id)} title="Hapus PO" className="text-red-500 hover:text-red-700 transition-colors p-1">
+                    <Trash2 size={18} />
                   </button>
                 </td>
               </tr>
