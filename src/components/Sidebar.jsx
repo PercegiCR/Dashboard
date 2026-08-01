@@ -25,8 +25,8 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   return (
     <aside className="w-64 flex flex-col bg-slate-900 text-slate-300 min-h-screen">
       <div className="flex items-center gap-3 p-6 mb-2 border-b border-slate-800">
-        <div className="text-amber-500 bg-amber-500/10 p-2 rounded-lg">
-          <Coffee size={28} />
+        <div className="bg-white/10 p-1.5 rounded-lg flex items-center justify-center">
+          <img src="/logo.png" alt="Percegi Coffee Logo" className="w-8 h-8 object-contain drop-shadow-md" />
         </div>
         <div className="text-xl font-bold text-white tracking-wide">Percegi Coffee</div>
       </div>

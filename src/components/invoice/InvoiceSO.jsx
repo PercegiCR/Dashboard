@@ -57,12 +57,12 @@ const InvoiceSO = ({ setActiveTab }) => {
       {/* Invoice Layout */}
       <div className="bg-white text-slate-900 p-10 rounded-2xl shadow-xl print:shadow-none print:rounded-none print:p-0">
         <div className="flex justify-between items-start border-b-2 border-slate-200 pb-8 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-100">
-              <Coffee size={40} />
+          <div className="flex items-center gap-4">
+            <div className="p-1 rounded-xl">
+              <img src="/logo.png" alt="Percegi Coffee Logo" className="w-14 h-14 object-contain" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-wide">KopiERP</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-wide">Percegi Coffee</h1>
               <p className="text-slate-500 text-sm">Jl. Kopi Nusantara No. 1, Jakarta</p>
               <p className="text-slate-500 text-sm">0812-3456-7890</p>
             </div>
