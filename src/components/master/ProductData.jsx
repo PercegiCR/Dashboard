@@ -195,36 +195,38 @@ const ProductData = () => {
 
               <div className="border border-gray-200 p-4 rounded-xl bg-gray-50 mt-2">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Resep (Bahan & Takaran)</h3>
-                <div className="flex gap-2 mb-3">
+                <div className="flex flex-wrap items-stretch gap-2 mb-3">
                   <select 
-                    className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="flex-1 min-w-[140px] bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 truncate"
                     value={selectedInv} onChange={e => setSelectedInv(e.target.value)}
                   >
                     <option value="">Pilih Bahan...</option>
                     {inventory.map(i => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
                   </select>
-                  <input 
-                    type="number" min="0.01" step="0.01" placeholder="Takaran"
-                    className="w-20 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    value={invQty} onChange={e => setInvQty(e.target.value)}
-                  />
-                  <select
-                    className="w-16 bg-white border border-gray-300 rounded-lg px-1 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    value={invUnit} onChange={e => setInvUnit(e.target.value)}
-                  >
-                    <option value="gram">g</option>
-                    <option value="kg">kg</option>
-                    <option value="ml">ml</option>
-                    <option value="liter">L</option>
-                    <option value="pcs">pcs</option>
-                    <option value="box">box</option>
-                  </select>
-                  <button 
-                    type="button" onClick={handleAddRecipeItem}
-                    className="whitespace-nowrap flex-shrink-0 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Tambah
-                  </button>
+                  <div className="flex flex-1 min-w-[200px] gap-2">
+                    <input 
+                      type="number" min="0.01" step="0.01" placeholder="Takaran"
+                      className="flex-1 min-w-0 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={invQty} onChange={e => setInvQty(e.target.value)}
+                    />
+                    <select
+                      className="w-16 bg-white border border-gray-300 rounded-lg px-1 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      value={invUnit} onChange={e => setInvUnit(e.target.value)}
+                    >
+                      <option value="gram">g</option>
+                      <option value="kg">kg</option>
+                      <option value="ml">ml</option>
+                      <option value="liter">L</option>
+                      <option value="pcs">pcs</option>
+                      <option value="box">box</option>
+                    </select>
+                    <button 
+                      type="button" onClick={handleAddRecipeItem}
+                      className="whitespace-nowrap flex-shrink-0 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors text-sm"
+                    >
+                      Tambah
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg bg-white custom-scrollbar">
