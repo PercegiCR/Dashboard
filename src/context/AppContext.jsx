@@ -107,7 +107,7 @@ const generateOrderNumber = (prefix, existingOrders, fieldName) => {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const y = String(date.getFullYear()).slice(-2);
   
-  const datePrefix = `${prefix}-${d}-${m}-${y}-`;
+  const datePrefix = `${prefix}-${d}${m}${y}`;
   let maxSeq = 0;
   
   existingOrders.forEach(order => {
