@@ -101,6 +101,29 @@ const convertQty = (qty, fromUnit, toUnit) => {
   return qty;
 };
 
+const generateOrderNumber = (prefix, existingOrders, fieldName) => {
+  const date = new Date();
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = String(date.getFullYear()).slice(-2);
+  
+  const datePrefix = `${prefix}-${d}-${m}-${y}-`;
+  let maxSeq = 0;
+  
+  existingOrders.forEach(order => {
+    const val = order[fieldName];
+    if (val && val.startsWith(datePrefix)) {
+      const seq = parseInt(val.replace(datePrefix, ''), 10);
+      if (!isNaN(seq) && seq > maxSeq) {
+        maxSeq = seq;
+      }
+    }
+  });
+  
+  const nextSeq = maxSeq + 1;
+  return `${datePrefix}${String(nextSeq).padStart(2, '0')}`;
+};
+
 export const AppProvider = ({ children }) => {
   const [vendors, setVendors] = useState(() => loadData('vendors', initialVendors));
   const [customers, setCustomers] = useState(() => loadData('customers', initialCustomers));
@@ -205,7 +228,10 @@ export const AppProvider = ({ children }) => {
 
   const addSalesOrder = (so) => {
     const { id, ...rest } = so;
-    setSalesOrders(prev => [...prev, { id: `SO-${Date.now()}`, soNumber: `SO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...rest }]);
+    setSalesOrders(prev => {
+      const newSoNumber = generateOrderNumber('SO', prev, 'soNumber');
+      return [...prev, { id: newSoNumber, soNumber: newSoNumber, date: new Date().toISOString().split('T')[0], ...rest }];
+    });
     // Deduct product stock
     setProducts(prevProducts => {
       let updatedProducts = [...prevProducts];
@@ -238,7 +264,10 @@ export const AppProvider = ({ children }) => {
 
   const addPurchaseOrder = (po) => {
     const { id, ...rest } = po;
-    setPurchaseOrders([...purchaseOrders, { id: `PO-${Date.now()}`, poNumber: `PO-${Date.now()}`, date: new Date().toISOString().split('T')[0], ...rest }]);
+    setPurchaseOrders(prev => {
+      const newPoNumber = generateOrderNumber('PO', prev, 'poNumber');
+      return [...prev, { id: newPoNumber, poNumber: newPoNumber, date: new Date().toISOString().split('T')[0], ...rest }];
+    });
   };
   const updatePurchaseOrder = (id, po) => setPurchaseOrders(purchaseOrders.map(p => p.id === id ? { ...p, ...po } : p));
   const deletePurchaseOrder = (id) => setPurchaseOrders(purchaseOrders.filter(p => p.id !== id));
