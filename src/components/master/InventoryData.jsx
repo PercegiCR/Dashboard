@@ -117,40 +117,43 @@ const InventoryData = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-overlay">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl animate-popup">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">{formData.id ? 'Edit Inventory' : 'Tambah Inventory'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-overlay">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl ring-1 ring-gray-900/5 animate-popup">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{formData.id ? 'Edit Inventory' : 'Tambah Inventory'}</h2>
+                <p className="text-sm text-gray-500 mt-1">Lengkapi data barang inventory.</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all">
                 <X size={24} />
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="flex flex-col gap-4">
+            <form onSubmit={handleSave} className="flex flex-col gap-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kode Barang</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kode Barang</label>
                   <input 
                     type="text" required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nama Barang</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nama Barang</label>
                   <input 
                     type="text" required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kategori</label>
                   <select 
                     required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
                   >
                     <option value="">Pilih...</option>
@@ -159,10 +162,10 @@ const InventoryData = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Satuan</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Satuan</label>
                   <select 
                     required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}
                   >
                     <option value="">Pilih...</option>
@@ -176,33 +179,33 @@ const InventoryData = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Harga Beli Standar</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Beli Standar</label>
                   <input 
                     type="number" required min="0"
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stok Awal</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Stok Awal</label>
                   <input 
                     type="number" required min="0" step="0.01"
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})}
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end gap-3 mt-4">
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button 
                   type="button" onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors border border-transparent"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
                 >
                   Batal
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 rounded-lg font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                 >
                   Simpan
                 </button>

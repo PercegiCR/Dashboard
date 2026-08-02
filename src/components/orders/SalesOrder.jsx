@@ -230,22 +230,25 @@ const SalesOrder = ({ setActiveTab }) => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-overlay">
-          <div className="bg-white p-6 rounded-xl w-full max-w-3xl shadow-2xl animate-popup max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">{formData.id ? 'Edit Sales Order' : 'Buat Sales Order Baru'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-overlay">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-4xl shadow-2xl ring-1 ring-gray-900/5 animate-popup max-h-[95vh] overflow-y-auto relative">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{formData.id ? 'Edit Sales Order' : 'Buat Sales Order Baru'}</h2>
+                <p className="text-sm text-gray-500 mt-1">Lengkapi form di bawah untuk memproses pesanan.</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all">
                 <X size={24} />
               </button>
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Customer</label>
                   <select 
                     required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})}
                   >
                     <option value="">Pilih Customer...</option>
@@ -253,10 +256,10 @@ const SalesOrder = ({ setActiveTab }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status Pembayaran</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status Pembayaran</label>
                   <select 
                     required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}
                   >
                     <option value="Lunas">Lunas</option>
@@ -264,9 +267,9 @@ const SalesOrder = ({ setActiveTab }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Pajak</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Pajak</label>
                   <select 
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={`${formData.taxType}|${formData.taxRate}`} 
                     onChange={e => {
                       const [type, rate] = e.target.value.split('|');
@@ -282,123 +285,148 @@ const SalesOrder = ({ setActiveTab }) => {
                 </div>
               </div>
 
-              <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Item Pesanan</h3>
-                <div className="flex flex-col gap-3 mb-4 border border-gray-100 p-3 rounded-lg bg-white">
-                  <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                    <select 
-                      className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                      value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
-                    >
-                      <option value="">Pilih Produk...</option>
-                      {products.map(p => <option key={p.id} value={p.id}>{p.name} - {formatRp(p.price)}</option>)}
-                    </select>
-                    <input 
-                      type="number" min="1" placeholder="Qty"
-                      className="w-full sm:w-20 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                      value={qty} onChange={e => setQty(e.target.value)}
-                    />
-                    <select
-                      className="w-full sm:w-32 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                      value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
-                    >
-                      <option value="Normal">Normal</option>
-                      <option value="Less Sugar">Less Sugar</option>
-                      <option value="No Sugar">No Sugar</option>
-                      <option value="Extra Shot">Extra Shot</option>
-                    </select>
-                    <select
-                      className="w-full sm:w-32 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                      value={temperature} onChange={e => setTemperature(e.target.value)}
-                    >
-                      <option value="Normal">Normal</option>
-                      <option value="Hot">Hot</option>
-                      <option value="Ice">Ice</option>
-                    </select>
-                  </div>
+              <div className="border border-gray-200 rounded-2xl bg-gray-50/50 overflow-hidden shadow-sm">
+                <div className="p-4 sm:p-5 border-b border-gray-200">
+                  <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <ShoppingCart size={18} className="text-amber-600"/> Item Pesanan
+                  </h3>
                   
-                  <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                    {sugarLevel === 'Extra Shot' && (
-                      <div className="w-full sm:w-36">
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Biaya Extra Shot</label>
+                  <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Produk</label>
+                        <select 
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
+                        >
+                          <option value="">Pilih Produk...</option>
+                          {products.map(p => <option key={p.id} value={p.id}>{p.name} - {formatRp(p.price)}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Qty</label>
                         <input 
-                          type="number" min="0" placeholder="Nominal"
-                          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                          value={extraShotCost} onChange={e => setExtraShotCost(e.target.value)}
+                          type="number" min="1" placeholder="Qty"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          value={qty} onChange={e => setQty(e.target.value)}
                         />
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Notes / Catatan</label>
-                      <input 
-                        type="text" placeholder="Contoh: Es dipisah, dll"
-                        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                        value={itemNotes} onChange={e => setItemNotes(e.target.value)}
-                      />
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Suhu</label>
+                        <select
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          value={temperature} onChange={e => setTemperature(e.target.value)}
+                        >
+                          <option value="Normal">Normal</option>
+                          <option value="Hot">Hot</option>
+                          <option value="Ice">Ice</option>
+                        </select>
+                      </div>
                     </div>
-                    <button 
-                      type="button" onClick={addItem}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-sm h-[42px] w-full sm:w-auto"
-                    >
-                      Tambah
-                    </button>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Gula / Shot</label>
+                        <select
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
+                        >
+                          <option value="Normal">Normal</option>
+                          <option value="Less Sugar">Less Sugar</option>
+                          <option value="No Sugar">No Sugar</option>
+                          <option value="Extra Shot">Extra Shot</option>
+                        </select>
+                      </div>
+                      {sugarLevel === 'Extra Shot' && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Biaya Extra</label>
+                          <input 
+                            type="number" min="0" placeholder="Nominal"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            value={extraShotCost} onChange={e => setExtraShotCost(e.target.value)}
+                          />
+                        </div>
+                      )}
+                      <div className={sugarLevel === 'Extra Shot' ? "md:col-span-1" : "md:col-span-2"}>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Catatan</label>
+                        <input 
+                          type="text" placeholder="Contoh: Es dipisah, dll"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          value={itemNotes} onChange={e => setItemNotes(e.target.value)}
+                        />
+                      </div>
+                      <div className="w-full">
+                        <button 
+                          type="button" onClick={addItem}
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 h-[38px]"
+                        >
+                          <Plus size={16} /> Tambah Item
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="max-h-56 overflow-y-auto overflow-x-auto custom-scrollbar">
+                <div className="max-h-56 overflow-y-auto overflow-x-auto custom-scrollbar bg-white">
                   <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
-                    <thead className="bg-gray-100 sticky top-0">
-                      <tr className="text-gray-600">
-                        <th className="p-2 font-medium border-b border-gray-200">Produk</th>
-                        <th className="p-2 font-medium border-b border-gray-200">Keterangan</th>
-                        <th className="p-2 font-medium border-b border-gray-200 text-right">Harga</th>
-                        <th className="p-2 font-medium border-b border-gray-200 text-right">Qty</th>
-                        <th className="p-2 font-medium border-b border-gray-200 text-right">Subtotal</th>
-                        <th className="p-2 font-medium border-b border-gray-200 text-center">x</th>
+                    <thead className="bg-gray-50/80 sticky top-0 backdrop-blur-sm z-10">
+                      <tr className="text-gray-500 uppercase tracking-wider text-xs">
+                        <th className="p-3 font-semibold border-b border-gray-200">Produk</th>
+                        <th className="p-3 font-semibold border-b border-gray-200">Keterangan</th>
+                        <th className="p-3 font-semibold border-b border-gray-200 text-right">Harga</th>
+                        <th className="p-3 font-semibold border-b border-gray-200 text-center">Qty</th>
+                        <th className="p-3 font-semibold border-b border-gray-200 text-right">Subtotal</th>
+                        <th className="p-3 font-semibold border-b border-gray-200 text-center">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-100">
                       {formData.items.map((item, index) => (
-                        <tr key={index} className="border-b border-gray-200 last:border-0 align-top">
-                          <td className="p-2 text-gray-800 font-medium">{item.name}</td>
-                          <td className="p-2 text-gray-500 text-xs">
-                            <div className="flex flex-col gap-0.5">
+                        <tr key={index} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="p-3 text-gray-800 font-semibold">{item.name}</td>
+                          <td className="p-3 text-gray-500 text-xs">
+                            <div className="flex flex-col gap-1 items-start">
                               {item.temperature && item.temperature !== 'Normal' && (
-                                <span>Temp: {item.temperature}</span>
+                                <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md font-medium">Temp: {item.temperature}</span>
                               )}
                               {item.sugarLevel && item.sugarLevel !== 'Normal' && (
-                                <span>Sugar/Shot: {item.sugarLevel} {item.extraShotCost > 0 ? `(+${formatRp(item.extraShotCost)})` : ''}</span>
+                                <span className="bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-md font-medium">
+                                  {item.sugarLevel} {item.extraShotCost > 0 ? `(+${formatRp(item.extraShotCost)})` : ''}
+                                </span>
                               )}
-                              {item.notes && <span>Notes: {item.notes}</span>}
+                              {item.notes && <span className="text-gray-400 italic mt-0.5">"{item.notes}"</span>}
                             </div>
                           </td>
-                          <td className="p-2 text-gray-600 text-right">{formatRp(item.price)}</td>
-                          <td className="p-2 text-gray-800 text-right">{item.qty}</td>
-                          <td className="p-2 text-emerald-600 font-medium text-right">{formatRp(item.subtotal)}</td>
-                          <td className="p-2 text-center">
-                            <button type="button" onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700 mt-0.5"><X size={14} /></button>
+                          <td className="p-3 text-gray-600 text-right">{formatRp(item.price)}</td>
+                          <td className="p-3 text-gray-800 text-center font-medium bg-gray-50/50">{item.qty}</td>
+                          <td className="p-3 text-emerald-600 font-bold text-right">{formatRp(item.subtotal)}</td>
+                          <td className="p-3 text-center">
+                            <button type="button" onClick={() => removeItem(index)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-colors">
+                              <Trash2 size={16} />
+                            </button>
                           </td>
                         </tr>
                       ))}
                       {formData.items.length === 0 && (
-                        <tr><td colSpan="5" className="p-4 text-center text-gray-500">Belum ada item ditambahkan.</td></tr>
+                        <tr><td colSpan="6" className="p-10 text-center text-gray-400">Belum ada item ditambahkan. Silahkan tambah item di atas.</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-500 font-medium">Subtotal:</span>
-                    <span className="text-lg font-semibold text-gray-800">{formatRp(getSubtotal())}</span>
-                  </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-500 font-medium">Pajak ({formData.taxType} {formData.taxRate > 0 ? `+${formData.taxRate}%` : formData.taxRate < 0 ? `${formData.taxRate}%` : ''}):</span>
-                    <span className="text-lg font-semibold text-gray-800">{formatRp(getTaxAmount())}</span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-                    <span className="text-gray-700 font-bold">Total Pesanan:</span>
-                    <span className="text-2xl font-bold text-amber-600">{formatRp(getTotal())}</span>
+                <div className="p-4 sm:p-5 bg-gray-50 border-t border-gray-200">
+                  <div className="flex flex-col gap-2 max-w-sm ml-auto">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium text-sm">Subtotal</span>
+                      <span className="text-gray-800 font-semibold">{formatRp(getSubtotal())}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium text-sm">Pajak ({formData.taxType} {formData.taxRate > 0 ? `+${formData.taxRate}%` : formData.taxRate < 0 ? `${formData.taxRate}%` : ''})</span>
+                      <span className="text-gray-800 font-semibold">{formatRp(getTaxAmount())}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-200">
+                      <span className="text-gray-800 font-bold">Total Pesanan</span>
+                      <span className="text-2xl font-black text-amber-600">{formatRp(getTotal())}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -406,15 +434,15 @@ const SalesOrder = ({ setActiveTab }) => {
               <div className="flex justify-end gap-3 mt-2">
                 <button 
                   type="button" onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors border border-transparent"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
                 >
                   Batal
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 rounded-lg font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
                 >
-                  {formData.id ? 'Simpan Perubahan' : 'Simpan Pesanan'}
+                  <Check size={18} /> {formData.id ? 'Simpan Perubahan' : 'Simpan Pesanan'}
                 </button>
               </div>
             </form>

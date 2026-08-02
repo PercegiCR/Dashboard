@@ -158,40 +158,43 @@ const ProductData = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-overlay">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl animate-popup">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">{formData.id ? 'Edit Menu' : 'Tambah Menu'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-overlay">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl ring-1 ring-gray-900/5 animate-popup">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{formData.id ? 'Edit Menu' : 'Tambah Menu'}</h2>
+                <p className="text-sm text-gray-500 mt-1">Isi detail produk menu di bawah ini.</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all">
                 <X size={24} />
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="flex flex-col gap-4">
+            <form onSubmit={handleSave} className="flex flex-col gap-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kode Produk</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kode Produk</label>
                   <input 
                     type="text" required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nama Menu</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nama Menu</label>
                   <input 
                     type="text" required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kategori</label>
                   <select 
                     required
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
                   >
                     <option value="">Pilih...</option>
@@ -202,33 +205,33 @@ const ProductData = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Harga Jual</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Jual</label>
                   <input 
                     type="number" required min="0"
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}
                   />
                 </div>
               </div>
 
-              <div className="border border-gray-200 p-4 rounded-xl bg-gray-50 mt-2">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Resep (Bahan & Takaran)</h3>
-                <div className="flex flex-wrap items-stretch gap-2 mb-3">
+              <div className="border border-gray-200 p-4 rounded-2xl bg-gray-50/50 shadow-sm mt-2">
+                <h3 className="text-sm font-bold text-gray-800 mb-3">Resep (Bahan & Takaran)</h3>
+                <div className="flex flex-col gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-3">
                   <select 
-                    className="flex-1 min-w-[140px] bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 truncate"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                     value={selectedInv} onChange={e => setSelectedInv(e.target.value)}
                   >
                     <option value="">Pilih Bahan...</option>
                     {inventory.map(i => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
                   </select>
-                  <div className="flex flex-1 min-w-[200px] gap-2">
+                  <div className="flex gap-2">
                     <input 
                       type="number" min="0.01" step="0.01" placeholder="Takaran"
-                      className="flex-1 min-w-0 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                       value={invQty} onChange={e => setInvQty(e.target.value)}
                     />
                     <select
-                      className="w-16 bg-white border border-gray-300 rounded-lg px-1 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-20 bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                       value={invUnit} onChange={e => setInvUnit(e.target.value)}
                     >
                       <option value="gram">g</option>
@@ -240,53 +243,53 @@ const ProductData = () => {
                     </select>
                     <button 
                       type="button" onClick={handleAddRecipeItem}
-                      className="whitespace-nowrap flex-shrink-0 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors text-sm"
+                      className="whitespace-nowrap bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg font-medium transition-all text-sm hover:scale-[1.02] active:scale-[0.98] shadow-sm"
                     >
                       Tambah
                     </button>
                   </div>
                 </div>
                 
-                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg bg-white custom-scrollbar">
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-xl bg-white custom-scrollbar">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-gray-100">
+                    <thead className="bg-gray-50/80 sticky top-0 backdrop-blur-sm">
                       <tr>
-                        <th className="p-2 font-medium">Bahan</th>
-                        <th className="p-2 font-medium text-right">Takaran</th>
-                        <th className="p-2 text-center">x</th>
+                        <th className="p-2.5 font-semibold text-gray-600">Bahan</th>
+                        <th className="p-2.5 font-semibold text-gray-600 text-right">Takaran</th>
+                        <th className="p-2.5 font-semibold text-gray-600 text-center">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-100">
                       {(formData.recipe || []).map((r, idx) => {
                         const invItem = inventory.find(i => i.id === r.inventoryId);
                         return (
-                          <tr key={idx} className="border-t border-gray-100">
-                            <td className="p-2">{invItem ? invItem.name : 'Unknown'}</td>
-                            <td className="p-2 text-right">{r.qty} {r.unit || (invItem ? invItem.unit : '')}</td>
-                            <td className="p-2 text-center">
-                              <button type="button" onClick={() => handleRemoveRecipeItem(idx)} className="text-red-500 hover:text-red-700"><X size={12} /></button>
+                          <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="p-2.5 text-gray-800 font-medium">{invItem ? invItem.name : 'Unknown'}</td>
+                            <td className="p-2.5 text-right font-medium text-gray-600">{r.qty} {r.unit || (invItem ? invItem.unit : '')}</td>
+                            <td className="p-2.5 text-center">
+                              <button type="button" onClick={() => handleRemoveRecipeItem(idx)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded-md transition-colors"><X size={14} /></button>
                             </td>
                           </tr>
                         );
                       })}
                       {(!formData.recipe || formData.recipe.length === 0) && (
-                        <tr><td colSpan="3" className="p-2 text-center text-gray-500">Belum ada bahan</td></tr>
+                        <tr><td colSpan="3" className="p-4 text-center text-gray-400 italic">Belum ada bahan ditambahkan.</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
               
-              <div className="flex justify-end gap-3 mt-2">
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button 
                   type="button" onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors border border-transparent"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
                 >
                   Batal
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 rounded-lg font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                 >
                   Simpan
                 </button>
@@ -297,34 +300,37 @@ const ProductData = () => {
       )}
 
       {isProduceModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-overlay">
-          <div className="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl animate-popup">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Produksi {produceData.productName}</h2>
-              <button onClick={() => setIsProduceModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-overlay">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-sm shadow-2xl ring-1 ring-gray-900/5 animate-popup">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Produksi {produceData.productName}</h2>
+                <p className="text-sm text-gray-500 mt-1">Masukkan jumlah yang diproduksi.</p>
+              </div>
+              <button onClick={() => setIsProduceModalOpen(false)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all">
                 <X size={24} />
               </button>
             </div>
             
             <form onSubmit={handleProduce} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah yang diproduksi</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Jumlah (Porsi / Cup)</label>
                 <input 
                   type="number" required min="1"
-                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                   value={produceData.qty} onChange={e => setProduceData({...produceData, qty: e.target.value})}
                 />
               </div>
-              <div className="flex justify-end gap-3 mt-4">
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button 
                   type="button" onClick={() => setIsProduceModalOpen(false)}
-                  className="px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors border border-transparent"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
                 >
                   Batal
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                 >
                   Produksi
                 </button>
