@@ -3,7 +3,7 @@ import { useAppContext } from '../../context/AppContext';
 import { ArrowLeft, Printer, Building2 } from 'lucide-react';
 
 const InvoicePO = ({ setActiveTab }) => {
-  const { purchaseOrders, vendors } = useAppContext();
+  const { purchaseOrders, vendors, settings } = useAppContext();
   const [po, setPo] = useState(null);
   const [vendor, setVendor] = useState(null);
 
@@ -62,9 +62,9 @@ const InvoicePO = ({ setActiveTab }) => {
               <img src="/logo.png" alt="Percegi Coffee Logo" className="w-14 h-14 object-contain" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-wide">Percegi Coffee</h1>
-              <p className="text-slate-500 text-sm">Jl. Kopi Nusantara No. 1, Jakarta</p>
-              <p className="text-slate-500 text-sm">0812-3456-7890</p>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-wide">{settings?.shopName || 'Percegi Coffee'}</h1>
+              <p className="text-slate-500 text-sm whitespace-pre-wrap">{settings?.shopAddress || 'Jl. Kopi Nusantara No. 1, Jakarta'}</p>
+              <p className="text-slate-500 text-sm">{settings?.shopPhone || '0812-3456-7890'}</p>
             </div>
           </div>
           <div className="text-right">

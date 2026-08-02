@@ -10,6 +10,8 @@ import PurchaseOrder from './components/orders/PurchaseOrder';
 import FinanceDashboard from './components/finance/FinanceDashboard';
 import InvoiceSO from './components/invoice/InvoiceSO';
 import InvoicePO from './components/invoice/InvoicePO';
+import InvoiceSettings from './components/settings/InvoiceSettings';
+import ExportData from './components/settings/ExportData';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -36,6 +38,10 @@ function App() {
         return <InvoiceSO setActiveTab={setActiveTab} />;
       case 'invoice_po':
         return <InvoicePO setActiveTab={setActiveTab} />;
+      case 'settings_invoice':
+        return <InvoiceSettings />;
+      case 'settings_export':
+        return <ExportData />;
       default:
         return <div><h1>Dashboard</h1></div>;
     }

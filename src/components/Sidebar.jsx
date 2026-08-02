@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Coffee, 
   LayoutDashboard, 
@@ -7,10 +7,15 @@ import {
   ShoppingCart, 
   FileText, 
   Wallet,
-  Briefcase
+  Briefcase,
+  Settings,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'so', label: 'Sales Order (SO)', icon: <ShoppingCart size={20} /> },
@@ -21,6 +26,18 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'vendor', label: 'Data Vendor', icon: <Briefcase size={20} /> },
     { id: 'finance', label: 'Finance Dashboard', icon: <Wallet size={20} /> },
   ];
+
+  const settingItems = [
+    { id: 'settings_invoice', label: 'Atur Invoice' },
+    { id: 'settings_export', label: 'Export Masal' },
+  ];
+
+  // Helper to check if any setting tab is active to keep dropdown open initially
+  React.useEffect(() => {
+    if (activeTab.startsWith('settings_')) {
+      setIsSettingsOpen(true);
+    }
+  }, [activeTab]);
 
   return (
     <aside className="w-64 flex flex-col bg-slate-900 text-slate-300 min-h-screen">
@@ -48,6 +65,38 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             {item.label}
           </div>
         ))}
+
+        {/* Pengaturan Dropdown */}
+        <div className="mt-2 border-t border-slate-800 pt-2">
+          <div 
+            className="flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-colors font-medium hover:bg-slate-800 hover:text-white"
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-slate-400"><Settings size={20} /></span>
+              Pengaturan
+            </div>
+            {isSettingsOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </div>
+          
+          {isSettingsOpen && (
+            <div className="ml-4 mt-1 flex flex-col gap-1 border-l border-slate-700 pl-3">
+              {settingItems.map(item => (
+                <div 
+                  key={item.id}
+                  className={`px-4 py-2 rounded-lg cursor-pointer transition-colors font-medium text-sm ${
+                    activeTab === item.id 
+                      ? 'bg-amber-600/20 text-amber-500' 
+                      : 'hover:bg-slate-800 hover:text-white'
+                  }`}
+                  onClick={() => setActiveTab(item.id)}
+                >
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );

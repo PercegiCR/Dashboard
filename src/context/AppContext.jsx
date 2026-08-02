@@ -132,6 +132,13 @@ export const AppProvider = ({ children }) => {
   const [salesOrders, setSalesOrders] = useState(() => loadData('salesOrders', initialSalesOrders));
   const [purchaseOrders, setPurchaseOrders] = useState(() => loadData('purchaseOrders', initialPurchaseOrders));
 
+  const defaultSettings = {
+    shopName: 'Percegi Coffee',
+    shopAddress: 'Jl. Kopi Nusantara No. 1, Jakarta',
+    shopPhone: '0812-3456-7890'
+  };
+  const [settings, setSettings] = useState(() => loadData('settings', defaultSettings));
+
   // Save to localStorage whenever data changes
   useEffect(() => localStorage.setItem('vendors', JSON.stringify(vendors)), [vendors]);
   useEffect(() => localStorage.setItem('customers', JSON.stringify(customers)), [customers]);
@@ -139,8 +146,11 @@ export const AppProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('products', JSON.stringify(products)), [products]);
   useEffect(() => localStorage.setItem('salesOrders', JSON.stringify(salesOrders)), [salesOrders]);
   useEffect(() => localStorage.setItem('purchaseOrders', JSON.stringify(purchaseOrders)), [purchaseOrders]);
+  useEffect(() => localStorage.setItem('settings', JSON.stringify(settings)), [settings]);
 
   // Actions
+  const updateSettings = (newSettings) => setSettings({ ...settings, ...newSettings });
+
   const addVendor = (vendor) => {
     const { id, ...rest } = vendor;
     setVendors([...vendors, { id: `V${Date.now()}`, ...rest }]);
@@ -273,6 +283,7 @@ export const AppProvider = ({ children }) => {
   const deletePurchaseOrder = (id) => setPurchaseOrders(purchaseOrders.filter(p => p.id !== id));
 
   const value = {
+    settings, updateSettings,
     vendors, addVendor, updateVendor, deleteVendor,
     customers, addCustomer, updateCustomer, deleteCustomer,
     inventory, addInventory, updateInventory, deleteInventory,
