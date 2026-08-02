@@ -12,12 +12,16 @@ import {
   X,
   Plus,
   FilePlus,
-  ShoppingCart as ShoppingCartIcon
+  ShoppingCart as ShoppingCartIcon,
+  Settings,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(activeTab?.startsWith('settings_') || false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -28,6 +32,11 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
     { id: 'customer', label: 'Data Customer', icon: <Users className="w-5 h-5" /> },
     { id: 'vendor', label: 'Data Vendor', icon: <Briefcase className="w-5 h-5" /> },
     { id: 'finance', label: 'Finance Dashboard', icon: <Wallet className="w-5 h-5" /> },
+  ];
+
+  const settingItems = [
+    { id: 'settings_invoice', label: 'Atur Invoice' },
+    { id: 'settings_export', label: 'Export Masal' },
   ];
 
   const handleFabClick = (type) => {
@@ -80,6 +89,41 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
               {item.label}
             </button>
           ))}
+          
+          {/* Pengaturan Dropdown */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <button 
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-medium transition-all duration-200 text-slate-600 hover:bg-amber-50 hover:text-amber-600"
+            >
+              <div className="flex items-center gap-3">
+                <Settings className="w-5 h-5" />
+                Pengaturan
+              </div>
+              {isSettingsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            </button>
+            
+            {isSettingsOpen && (
+              <div className="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 pl-3">
+                {settingItems.map(item => (
+                  <button 
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      activeTab === item.id 
+                        ? 'bg-amber-100 text-amber-700 font-bold' 
+                        : 'text-slate-500 hover:bg-amber-50 hover:text-amber-600'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
       </aside>
 
