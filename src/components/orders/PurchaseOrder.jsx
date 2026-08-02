@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2 } from 'lucide-react';
+import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lucide-react';
 
 const PurchaseOrder = ({ setActiveTab }) => {
   const { purchaseOrders, vendors, inventory, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, updateInventory } = useAppContext();
@@ -12,6 +12,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
   const [selectedInventory, setSelectedInventory] = useState('');
   const [qty, setQty] = useState(1);
   const [price, setPrice] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleOpenModal = () => {
     setFormData({ id: null, vendorId: '', status: 'Hutang', items: [], taxType: 'Non Pajak', taxRate: 0 });
@@ -139,6 +140,12 @@ const PurchaseOrder = ({ setActiveTab }) => {
     return v ? v.name : 'Unknown Vendor';
   };
 
+  const filteredpurchaseOrders = purchaseOrders.filter(item => {
+    const venName = getVendorName(item.vendorId);
+    const searchStr = `${item.poNumber} ${item.date} ${venName} ${item.status} ${item.total}`.toLowerCase();
+    return searchStr.includes(searchTerm.toLowerCase());
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
@@ -152,6 +159,17 @@ const PurchaseOrder = ({ setActiveTab }) => {
         >
           <ShoppingCart size={18} /> Buat PO
         </button>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow-md border border-gray-100 flex items-center gap-3">
+        <Search className="text-gray-400" size={20} />
+        <input 
+          type="text" 
+          placeholder="Cari Purchase Order..." 
+          className="w-full outline-none text-gray-700 bg-transparent"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
@@ -168,7 +186,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
             </tr>
           </thead>
           <tbody>
-            {purchaseOrders.map(po => (
+            {filteredpurchaseOrders.map(po => (
               <tr key={po.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 text-gray-700">
                 <td className="p-4 font-mono text-sm text-amber-600 font-bold">{po.poNumber}</td>
                 <td className="p-4">{po.date}</td>
@@ -199,7 +217,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
                 </td>
               </tr>
             ))}
-            {purchaseOrders.length === 0 && (
+            {filteredpurchaseOrders.length === 0 && (
               <tr>
                 <td colSpan="6" className="p-8 text-center text-gray-500">Belum ada transaksi Purchase Order.</td>
               </tr>

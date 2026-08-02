@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Search } from 'lucide-react';
 
 const CustomerData = () => {
   const { customers, addCustomer, updateCustomer, deleteCustomer } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ id: null, name: '', phone: '', email: '', address: '', type: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredcustomers = customers.filter(item => 
+    Object.values(item).some(val => 
+      String(val).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   const handleOpenModal = (customer = null) => {
     if (customer) {
@@ -41,6 +48,17 @@ const CustomerData = () => {
         </button>
       </div>
 
+      <div className="bg-white p-4 rounded-lg shadow-md border border-gray-100 flex items-center gap-3">
+        <Search className="text-gray-400" size={20} />
+        <input 
+          type="text" 
+          placeholder="Cari pelanggan..." 
+          className="w-full outline-none text-gray-700 bg-transparent"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse whitespace-nowrap">
@@ -55,7 +73,7 @@ const CustomerData = () => {
             </tr>
           </thead>
           <tbody>
-            {customers.map(c => (
+            {filteredcustomers.map(c => (
               <tr key={c.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 text-gray-700">
                 <td className="p-4 font-mono text-sm text-gray-500">{c.id}</td>
                 <td className="p-4 font-medium text-gray-900">{c.name}</td>
@@ -76,7 +94,7 @@ const CustomerData = () => {
                 </td>
               </tr>
             ))}
-            {customers.length === 0 && (
+            {filteredcustomers.length === 0 && (
               <tr>
                 <td colSpan="6" className="p-8 text-center text-gray-500">Belum ada data customer.</td>
               </tr>

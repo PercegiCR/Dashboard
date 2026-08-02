@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2 } from 'lucide-react';
+import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lucide-react';
 
 const SalesOrder = ({ setActiveTab }) => {
   const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder } = useAppContext();
@@ -13,6 +13,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [qty, setQty] = useState(1);
   const [itemNotes, setItemNotes] = useState('');
   const [sugarLevel, setSugarLevel] = useState('Normal');
+  const [searchTerm, setSearchTerm] = useState('');
   const [extraShotCost, setExtraShotCost] = useState(0);
   const [temperature, setTemperature] = useState('Normal');
 
@@ -141,6 +142,12 @@ const SalesOrder = ({ setActiveTab }) => {
     return c ? c.name : 'Unknown Customer';
   };
 
+  const filteredsalesOrders = salesOrders.filter(item => {
+    const custName = getCustomerName(item.customerId);
+    const searchStr = `${item.soNumber} ${item.date} ${custName} ${item.status} ${item.total}`.toLowerCase();
+    return searchStr.includes(searchTerm.toLowerCase());
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
@@ -154,6 +161,17 @@ const SalesOrder = ({ setActiveTab }) => {
         >
           <ShoppingCart size={18} /> Buat Pesanan
         </button>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow-md border border-gray-100 flex items-center gap-3">
+        <Search className="text-gray-400" size={20} />
+        <input 
+          type="text" 
+          placeholder="Cari Sales Order..." 
+          className="w-full outline-none text-gray-700 bg-transparent"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
@@ -170,7 +188,7 @@ const SalesOrder = ({ setActiveTab }) => {
             </tr>
           </thead>
           <tbody>
-            {salesOrders.map(so => (
+            {filteredsalesOrders.map(so => (
               <tr key={so.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 text-gray-700">
                 <td className="p-4 font-mono text-sm text-amber-600 font-bold">{so.soNumber}</td>
                 <td className="p-4">{so.date}</td>
@@ -201,7 +219,7 @@ const SalesOrder = ({ setActiveTab }) => {
                 </td>
               </tr>
             ))}
-            {salesOrders.length === 0 && (
+            {filteredsalesOrders.length === 0 && (
               <tr>
                 <td colSpan="6" className="p-8 text-center text-gray-500">Belum ada transaksi Sales Order.</td>
               </tr>
