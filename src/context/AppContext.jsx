@@ -33,54 +33,17 @@ const dateOffset = (daysAgo) => {
 };
 
 // Initial Mock Data
-const initialVendors = [
-  { id: 'V1', name: 'PT Biji Kopi Nusantara', contact: 'Budi', phone: '0812345678', address: 'Jl. Kopi No.1', category: 'Bahan' },
-  { id: 'V2', name: 'CV Sumber Susu Segar', contact: 'Ani', phone: '0813456789', address: 'Jl. Susu No.5', category: 'Bahan' },
-];
+const initialVendors = [];
 
-const initialCustomers = [
-  { id: 'C1', name: 'John Doe', phone: '0812999999', email: 'john@example.com', address: 'Jl. Sudirman', type: 'Retail' },
-  { id: 'C2', name: 'Siti Rahayu', phone: '0811888888', email: 'siti@example.com', address: 'Jl. Thamrin', type: 'Retail' },
-  { id: 'C3', name: 'Kafe Maju Jaya', phone: '0819777777', email: 'kafe@example.com', address: 'Jl. Kebon Jeruk', type: 'Wholesale' },
-];
+const initialCustomers = [];
 
-const initialInventory = [
-  { id: 'I1', code: 'INV-001', name: 'Biji Kopi Arabica', category: 'Bahan', unit: 'kg', price: 200000, stock: 10 },
-  { id: 'I2', code: 'INV-002', name: 'Susu Full Cream', category: 'Bahan', unit: 'liter', price: 18000, stock: 50 },
-  { id: 'I3', code: 'INV-003', name: 'Gula Aren', category: 'Bahan', unit: 'kg', price: 30000, stock: 20 },
-];
+const initialInventory = [];
 
-const initialProducts = [
-  { id: 'P1', code: 'PRD-001', name: 'Kopi Susu Aren', price: 28000, category: 'Minuman', stock: 10, recipe: [{inventoryId: 'I1', qty: 0.02}, {inventoryId: 'I2', qty: 0.15}, {inventoryId: 'I3', qty: 0.02}] },
-  { id: 'P2', code: 'PRD-002', name: 'Americano', price: 22000, category: 'Minuman', stock: 20, recipe: [{inventoryId: 'I1', qty: 0.02}] },
-  { id: 'P3', code: 'PRD-003', name: 'Cappuccino', price: 30000, category: 'Minuman', stock: 15, recipe: [{inventoryId: 'I1', qty: 0.02}, {inventoryId: 'I2', qty: 0.2}] },
-  { id: 'P4', code: 'PRD-004', name: 'Matcha Latte', price: 32000, category: 'Minuman', stock: 5, recipe: [{inventoryId: 'I2', qty: 0.2}] },
-];
+const initialProducts = [];
 
-// Demo Sales Orders with spread-out dates (last 30 days)
-const initialSalesOrders = [
-  { id: 'SO1', soNumber: 'SO-001', date: dateOffset(0), customerId: 'C1', items: [{ name: 'Kopi Susu Aren', qty: 3, price: 28000, subtotal: 84000 }], total: 84000, status: 'Lunas' },
-  { id: 'SO2', soNumber: 'SO-002', date: dateOffset(0), customerId: 'C2', items: [{ name: 'Americano', qty: 2, price: 22000, subtotal: 44000 }], total: 44000, status: 'Pending' },
-  { id: 'SO3', soNumber: 'SO-003', date: dateOffset(1), customerId: 'C3', items: [{ name: 'Cappuccino', qty: 10, price: 30000, subtotal: 300000 }], total: 300000, status: 'Lunas' },
-  { id: 'SO4', soNumber: 'SO-004', date: dateOffset(2), customerId: 'C1', items: [{ name: 'Matcha Latte', qty: 2, price: 32000, subtotal: 64000 }], total: 64000, status: 'Lunas' },
-  { id: 'SO5', soNumber: 'SO-005', date: dateOffset(3), customerId: 'C2', items: [{ name: 'Kopi Susu Aren', qty: 4, price: 28000, subtotal: 112000 }], total: 112000, status: 'Lunas' },
-  { id: 'SO6', soNumber: 'SO-006', date: dateOffset(5), customerId: 'C3', items: [{ name: 'Americano', qty: 5, price: 22000, subtotal: 110000 }], total: 110000, status: 'Lunas' },
-  { id: 'SO7', soNumber: 'SO-007', date: dateOffset(7), customerId: 'C1', items: [{ name: 'Cappuccino', qty: 3, price: 30000, subtotal: 90000 }], total: 90000, status: 'Lunas' },
-  { id: 'SO8', soNumber: 'SO-008', date: dateOffset(10), customerId: 'C2', items: [{ name: 'Kopi Susu Aren', qty: 6, price: 28000, subtotal: 168000 }], total: 168000, status: 'Lunas' },
-  { id: 'SO9', soNumber: 'SO-009', date: dateOffset(14), customerId: 'C3', items: [{ name: 'Matcha Latte', qty: 8, price: 32000, subtotal: 256000 }], total: 256000, status: 'Lunas' },
-  { id: 'SO10', soNumber: 'SO-010', date: dateOffset(20), customerId: 'C1', items: [{ name: 'Americano', qty: 4, price: 22000, subtotal: 88000 }], total: 88000, status: 'Lunas' },
-  { id: 'SO11', soNumber: 'SO-011', date: dateOffset(25), customerId: 'C2', items: [{ name: 'Cappuccino', qty: 5, price: 30000, subtotal: 150000 }], total: 150000, status: 'Lunas' },
-];
+const initialSalesOrders = [];
 
-// Demo Purchase Orders with spread-out dates
-const initialPurchaseOrders = [
-  { id: 'PO1', poNumber: 'PO-001', date: dateOffset(1), vendorId: 'V1', items: [{ name: 'Biji Kopi Arabica', qty: 2, price: 200000, subtotal: 400000, unit: 'kg' }], total: 400000, status: 'Lunas' },
-  { id: 'PO2', poNumber: 'PO-002', date: dateOffset(3), vendorId: 'V2', items: [{ name: 'Susu Full Cream', qty: 10, price: 18000, subtotal: 180000, unit: 'liter' }], total: 180000, status: 'Hutang' },
-  { id: 'PO3', poNumber: 'PO-003', date: dateOffset(7), vendorId: 'V1', items: [{ name: 'Gula Aren', qty: 5, price: 30000, subtotal: 150000, unit: 'kg' }], total: 150000, status: 'Lunas' },
-  { id: 'PO4', poNumber: 'PO-004', date: dateOffset(12), vendorId: 'V2', items: [{ name: 'Susu Full Cream', qty: 20, price: 18000, subtotal: 360000, unit: 'liter' }], total: 360000, status: 'Lunas' },
-  { id: 'PO5', poNumber: 'PO-005', date: dateOffset(20), vendorId: 'V1', items: [{ name: 'Biji Kopi Arabica', qty: 3, price: 200000, subtotal: 600000, unit: 'kg' }], total: 600000, status: 'Lunas' },
-  { id: 'PO6', poNumber: 'PO-006', date: dateOffset(28), vendorId: 'V2', items: [{ name: 'Gula Aren', qty: 8, price: 30000, subtotal: 240000, unit: 'kg' }], total: 240000, status: 'Lunas' },
-];
+const initialPurchaseOrders = [];
 
 const convertQty = (qty, fromUnit, toUnit) => {
   if (!fromUnit || !toUnit) return qty;
