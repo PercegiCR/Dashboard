@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { ArrowLeft, Printer, Building2 } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 
 const InvoicePO = ({ setActiveTab }) => {
   const { purchaseOrders, vendors, settings } = useAppContext();

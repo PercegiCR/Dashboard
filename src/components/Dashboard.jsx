@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { 
-  Coffee, Users, Package, ShoppingCart, TrendingUp, TrendingDown, 
-  BarChart2, FileText, Calendar, ArrowUpRight, ArrowDownRight,
-  ClipboardList, Truck, Award, Star
+  Coffee, Users, Package, ShoppingCart,
+  BarChart2, ClipboardList, Truck, Award, Star
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -15,11 +14,6 @@ const formatDate = (d) => {
   return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const today = () => {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
-};
 
 const daysAgo = (n) => {
   const d = new Date();
@@ -205,7 +199,6 @@ const Dashboard = ({ setActiveTab }) => {
 
   // ── Build daily buckets for selected period ─────────────────────────────
   const { chartLabels, revenueData, expenseData, profitData, totalRevenue, totalExpense, totalProfit } = useMemo(() => {
-    const end = today();
     const start = daysAgo(period);
     const numDays = period;
 
@@ -254,15 +247,6 @@ const Dashboard = ({ setActiveTab }) => {
     };
   }, [salesOrders, purchaseOrders, period]);
 
-  // ── Recent lists ──────────────────────────────────────────────────────────
-  const recentSO = [...salesOrders]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
-
-  const recentPO = [...purchaseOrders]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
-
   // ── Rankings ──────────────────────────────────────────────────────────────
   const { topCustomers, topProducts } = useMemo(() => {
     const customerStats = {};
@@ -294,26 +278,6 @@ const Dashboard = ({ setActiveTab }) => {
 
     return { topCustomers: topC, topProducts: topP };
   }, [salesOrders, customers]);
-
-  // ── Stat cards ────────────────────────────────────────────────────────────
-  const statCards = [
-    {
-      label: 'Total Customer', value: customers.length, icon: <Users className="w-5 h-5" />,
-      color: 'bg-blue-500', bg: 'bg-blue-50 text-blue-600', tab: 'customer'
-    },
-    {
-      label: 'Menu Aktif', value: products.length, icon: <Coffee className="w-5 h-5" />,
-      color: 'bg-amber-500', bg: 'bg-amber-50 text-amber-600', tab: 'product'
-    },
-    {
-      label: 'Sales Order', value: salesOrders.length, icon: <ShoppingCart className="w-5 h-5" />,
-      color: 'bg-emerald-500', bg: 'bg-emerald-50 text-emerald-600', tab: 'so'
-    },
-    {
-      label: 'Purchase Order', value: purchaseOrders.length, icon: <Package className="w-5 h-5" />,
-      color: 'bg-rose-500', bg: 'bg-rose-50 text-rose-600', tab: 'po'
-    },
-  ];
 
   const periodLabel = period === 1 ? 'Hari Ini' : `${period} Hari Terakhir`;
 

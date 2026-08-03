@@ -101,7 +101,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addVendor = async (vendor) => {
-    const { id, ...rest } = vendor;
+    const { id: _id, ...rest } = vendor;
     await addDoc(collection(db, 'vendors'), rest);
   };
   const updateVendor = async (id, vendor) => {
@@ -112,7 +112,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addCustomer = async (customer) => {
-    const { id, ...rest } = customer;
+    const { id: _id, ...rest } = customer;
     await addDoc(collection(db, 'customers'), rest);
   };
   const updateCustomer = async (id, customer) => {
@@ -123,7 +123,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addInventory = async (item) => {
-    const { id, ...rest } = item;
+    const { id: _id, ...rest } = item;
     await addDoc(collection(db, 'inventory'), rest);
   };
   const updateInventory = async (id, item) => {
@@ -134,7 +134,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addProduct = async (product) => {
-    const { id, ...rest } = product;
+    const { id: _id, ...rest } = product;
     await addDoc(collection(db, 'products'), { stock: 0, recipe: [], ...rest });
   };
   const updateProduct = async (id, product) => {
@@ -192,7 +192,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addSalesOrder = async (so) => {
-    const { id, ...rest } = so;
+    const { id: _id, ...rest } = so;
     const newSoNumber = generateOrderNumber('SO', salesOrders, 'soNumber');
     
     try {
@@ -245,7 +245,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addPurchaseOrder = async (po) => {
-    const { id, ...rest } = po;
+    const { id: _id, ...rest } = po;
     const newPoNumber = generateOrderNumber('PO', purchaseOrders, 'poNumber');
     await addDoc(collection(db, 'purchaseOrders'), { poNumber: newPoNumber, date: new Date().toISOString().split('T')[0], ...rest });
   };
