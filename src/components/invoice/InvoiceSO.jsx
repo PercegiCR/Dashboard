@@ -98,7 +98,18 @@ const InvoiceSO = ({ setActiveTab }) => {
           <tbody>
             {so.items.map((item, i) => (
               <tr key={i} className="border-b border-slate-100 last:border-slate-200">
-                <td className="p-3 font-medium text-slate-800">{item.name}</td>
+                <td className="p-3">
+                  <div className="font-medium text-slate-800">{item.name}</div>
+                  {(item.size || (item.temperature && item.temperature !== 'Normal') || (item.sugarLevel && item.sugarLevel !== 'Normal') || (item.shotCount > 0) || item.notes) && (
+                    <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                      {item.size && <span>• {item.size}</span>}
+                      {item.temperature && item.temperature !== 'Normal' && <span>• {item.temperature}</span>}
+                      {item.sugarLevel && item.sugarLevel !== 'Normal' && <span>• {item.sugarLevel}</span>}
+                      {item.shotCount > 0 && <span>• +{item.shotCount} Shot</span>}
+                      {item.notes && <span className="italic text-slate-400">({item.notes})</span>}
+                    </div>
+                  )}
+                </td>
                 <td className="p-3 text-right text-slate-600">{formatRp(item.price)}</td>
                 <td className="p-3 text-center font-medium text-slate-800">{item.qty}</td>
                 <td className="p-3 text-right font-bold text-slate-800">{formatRp(item.subtotal)}</td>
