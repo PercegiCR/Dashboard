@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Shield, Trash2, Edit2, X, CheckSquare } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const availablePages = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -86,11 +87,11 @@ const RoleManagement = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name) {
-      alert("Nama role harus diisi!");
+      Swal.fire('Perhatian', 'Nama role harus diisi!', 'warning');
       return;
     }
     if (formData.access.length === 0) {
-      alert("Pilih minimal satu akses halaman!");
+      Swal.fire('Perhatian', 'Pilih minimal satu akses halaman!', 'warning');
       return;
     }
 
@@ -112,7 +113,7 @@ const RoleManagement = () => {
 
   const handleDelete = (id) => {
     if (id === '1') {
-      alert("Role 'administration' adalah role default dan tidak bisa dihapus.");
+      Swal.fire('Gagal', "Role 'administration' adalah role default dan tidak bisa dihapus.", 'error');
       return;
     }
     
@@ -120,15 +121,27 @@ const RoleManagement = () => {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     const isUsed = users.some(u => u.roleId === id);
     if (isUsed) {
-      alert("Role ini sedang digunakan oleh user aktif. Silakan ubah role user tersebut terlebih dahulu.");
+      Swal.fire('Gagal', "Role ini sedang digunakan oleh user aktif. Silakan ubah role user tersebut terlebih dahulu.", 'error');
       return;
     }
 
-    if (window.confirm("Apakah Anda yakin ingin menghapus role ini?")) {
-      const updatedRoles = roles.filter(r => r.id !== id);
-      setRoles(updatedRoles);
-      localStorage.setItem('roles', JSON.stringify(updatedRoles));
-    }
+    Swal.fire({
+      title: 'Hapus Role?',
+      text: "Apakah Anda yakin ingin menghapus role ini?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const updatedRoles = roles.filter(r => r.id !== id);
+        setRoles(updatedRoles);
+        localStorage.setItem('roles', JSON.stringify(updatedRoles));
+        Swal.fire('Terhapus!', 'Role berhasil dihapus.', 'success');
+      }
+    });
   };
 
   const filteredRoles = roles.filter(r => 

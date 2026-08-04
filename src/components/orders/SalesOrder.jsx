@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const SalesOrder = ({ setActiveTab }) => {
   const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder } = useAppContext();
@@ -43,16 +44,16 @@ const SalesOrder = ({ setActiveTab }) => {
   const addItem = () => {
     try {
       if (!selectedProduct) {
-        alert("Pilih produk terlebih dahulu!");
+        Swal.fire('Perhatian', 'Pilih produk terlebih dahulu!', 'warning');
         return;
       }
       if (Number(qty) <= 0) {
-        alert("Jumlah (Qty) harus lebih dari 0!");
+        Swal.fire('Perhatian', 'Jumlah (Qty) harus lebih dari 0!', 'warning');
         return;
       }
       const product = products.find(p => String(p.id) === String(selectedProduct));
       if (!product) {
-        alert("Produk tidak ditemukan! ID yg dicari: '" + selectedProduct + "'. ID tersedia: " + products.map(p=>`'${p.id}'`).join(", "));
+        Swal.fire('Gagal', "Produk tidak ditemukan! ID yg dicari: '" + selectedProduct + "'. ID tersedia: " + products.map(p=>`'${p.id}'`).join(", "), 'error');
         return;
       }
 
@@ -81,9 +82,10 @@ const SalesOrder = ({ setActiveTab }) => {
       setItemNotes('');
       setSugarLevel('Normal');
       setExtraShotCost(0);
+      setExtraShotCost(0);
       setTemperature('Normal');
     } catch (error) {
-      alert("Terjadi kesalahan: " + error.message);
+      Swal.fire('Gagal', "Terjadi kesalahan: " + error.message, 'error');
     }
   };
 
@@ -100,7 +102,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const handleSave = (e) => {
     e.preventDefault();
     if (formData.items.length === 0) {
-      alert("Pilih minimal 1 item produk!");
+      Swal.fire('Perhatian', 'Pilih minimal 1 item produk!', 'warning');
       return;
     }
     
@@ -128,9 +130,21 @@ const SalesOrder = ({ setActiveTab }) => {
   };
 
   const handleDeleteSO = (id) => {
-    if (window.confirm('Yakin ingin menghapus Sales Order ini? Stok produk akan dikembalikan.')) {
-      deleteSalesOrder(id);
-    }
+    Swal.fire({
+      title: 'Hapus Sales Order?',
+      text: "Yakin ingin menghapus Sales Order ini? Stok produk akan dikembalikan.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteSalesOrder(id);
+        Swal.fire('Terhapus!', 'Sales Order berhasil dihapus.', 'success');
+      }
+    });
   };
 
   const formatRp = (angka) => {

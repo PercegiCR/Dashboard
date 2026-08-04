@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, Edit, Trash2, X, PackagePlus, Search } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const ProductData = () => {
   const { products, inventory, addProduct, updateProduct, deleteProduct, produceProduct } = useAppContext();
@@ -74,8 +75,9 @@ const ProductData = () => {
     const res = await produceProduct(produceData.productId, produceData.qty);
     if (res.success) {
       setIsProduceModalOpen(false);
+      Swal.fire('Berhasil!', 'Produksi berhasil dicatat', 'success');
     } else {
-      alert(res.message);
+      Swal.fire('Gagal!', res.message, 'error');
     }
   };
 
@@ -141,7 +143,23 @@ const ProductData = () => {
                   <button onClick={() => handleOpenModal(item)} title="Edit" className="text-blue-500 hover:text-blue-700 transition-colors p-1">
                     <Edit size={18} />
                   </button>
-                  <button onClick={() => { if(window.confirm('Yakin ingin menghapus data ini?')) deleteProduct(item.id) }} title="Hapus" className="text-red-500 hover:text-red-700 transition-colors p-1">
+                  <button onClick={() => {
+                    Swal.fire({
+                      title: 'Hapus Menu?',
+                      text: "Yakin ingin menghapus data ini?",
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonColor: '#ef4444',
+                      cancelButtonColor: '#6b7280',
+                      confirmButtonText: 'Ya, hapus!',
+                      cancelButtonText: 'Batal'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        deleteProduct(item.id);
+                        Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
+                      }
+                    });
+                  }} title="Hapus" className="text-red-500 hover:text-red-700 transition-colors p-1">
                     <Trash2 size={18} />
                   </button>
                 </td>

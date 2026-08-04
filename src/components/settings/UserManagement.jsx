@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, UserCheck, Shield, Trash2, Edit2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import Swal from 'sweetalert2';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -56,7 +57,7 @@ const UserManagement = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.username || !formData.password || !formData.roleId) {
-      alert("Semua field harus diisi!");
+      Swal.fire('Perhatian', 'Semua field harus diisi!', 'warning');
       return;
     }
 
@@ -79,14 +80,26 @@ const UserManagement = () => {
 
   const handleDelete = (id) => {
     if (users.length === 1) {
-      alert("Tidak bisa menghapus user terakhir.");
+      Swal.fire('Gagal', 'Tidak bisa menghapus user terakhir.', 'error');
       return;
     }
-    if (window.confirm("Apakah Anda yakin ingin menghapus user ini?")) {
-      const updatedUsers = users.filter(u => u.id !== id);
-      setUsers(updatedUsers);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-    }
+    Swal.fire({
+      title: 'Hapus User?',
+      text: "Apakah Anda yakin ingin menghapus user ini?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const updatedUsers = users.filter(u => u.id !== id);
+        setUsers(updatedUsers);
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        Swal.fire('Terhapus!', 'User berhasil dihapus.', 'success');
+      }
+    });
   };
 
   const getRoleName = (roleId) => {

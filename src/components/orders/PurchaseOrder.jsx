@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const PurchaseOrder = ({ setActiveTab }) => {
   const { purchaseOrders, vendors, inventory, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, updateInventory } = useAppContext();
@@ -80,7 +81,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
   const handleSave = (e) => {
     e.preventDefault();
     if (formData.items.length === 0) {
-      alert("Pilih minimal 1 item!");
+      Swal.fire('Perhatian', 'Pilih minimal 1 item!', 'warning');
       return;
     }
     
@@ -117,18 +118,30 @@ const PurchaseOrder = ({ setActiveTab }) => {
   };
 
   const handleDeletePO = (id) => {
-    if (window.confirm('Yakin ingin menghapus Purchase Order ini? Stok inventory akan dikurangi kembali.')) {
-      const po = purchaseOrders.find(p => p.id === id);
-      if (po) {
-        po.items.forEach(orderItem => {
-          const invItem = inventory.find(i => i.id === orderItem.inventoryId);
-          if (invItem) {
-            updateInventory(invItem.id, { ...invItem, stock: invItem.stock - orderItem.qty });
-          }
-        });
+    Swal.fire({
+      title: 'Hapus Purchase Order?',
+      text: "Yakin ingin menghapus Purchase Order ini? Stok inventory akan dikurangi kembali.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const po = purchaseOrders.find(p => p.id === id);
+        if (po) {
+          po.items.forEach(orderItem => {
+            const invItem = inventory.find(i => i.id === orderItem.inventoryId);
+            if (invItem) {
+              updateInventory(invItem.id, { ...invItem, stock: invItem.stock - orderItem.qty });
+            }
+          });
+        }
+        deletePurchaseOrder(id);
+        Swal.fire('Terhapus!', 'Purchase Order berhasil dihapus.', 'success');
       }
-      deletePurchaseOrder(id);
-    }
+    });
   };
 
   const formatRp = (angka) => {

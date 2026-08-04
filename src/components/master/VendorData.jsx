@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, Edit, Trash2, X, Search } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const VendorData = () => {
   const { vendors, addVendor, updateVendor, deleteVendor } = useAppContext();
@@ -88,7 +89,23 @@ const VendorData = () => {
                   <button onClick={() => handleOpenModal(v)} className="text-blue-500 hover:text-blue-700 transition-colors p-1">
                     <Edit size={18} />
                   </button>
-                  <button onClick={() => { if(window.confirm('Yakin ingin menghapus data ini?')) deleteVendor(v.id) }} className="text-red-500 hover:text-red-700 transition-colors p-1">
+                  <button onClick={() => {
+                    Swal.fire({
+                      title: 'Hapus Vendor?',
+                      text: "Yakin ingin menghapus data ini?",
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonColor: '#ef4444',
+                      cancelButtonColor: '#6b7280',
+                      confirmButtonText: 'Ya, hapus!',
+                      cancelButtonText: 'Batal'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        deleteVendor(v.id);
+                        Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
+                      }
+                    });
+                  }} className="text-red-500 hover:text-red-700 transition-colors p-1">
                     <Trash2 size={18} />
                   </button>
                 </td>

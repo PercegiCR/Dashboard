@@ -1,13 +1,14 @@
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Download, FileSpreadsheet } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const ExportData = () => {
   const { salesOrders, purchaseOrders, products, inventory, customers, vendors } = useAppContext();
 
   const exportToCSV = (data, filename) => {
     if (!data || data.length === 0) {
-      alert('Tidak ada data untuk diexport.');
+      Swal.fire('Perhatian', 'Tidak ada data untuk diexport.', 'warning');
       return;
     }
 
