@@ -21,11 +21,21 @@ const ProductData = () => {
     )
   );
 
+  const generateProductCode = () => {
+    const prdCodes = products
+      .filter(p => p.code && p.code.startsWith('PRD-'))
+      .map(p => parseInt(p.code.replace('PRD-', ''), 10))
+      .filter(n => !isNaN(n));
+    const maxNumber = prdCodes.length > 0 ? Math.max(...prdCodes) : 0;
+    const nextNumber = maxNumber + 1;
+    return `PRD-${nextNumber.toString().padStart(3, '0')}`;
+  };
+
   const handleOpenModal = (item = null) => {
     if (item) {
       setFormData({ ...item, recipe: item.recipe || [] });
     } else {
-      setFormData({ id: null, code: '', name: '', category: '', price: 0, recipe: [] });
+      setFormData({ id: null, code: generateProductCode(), name: '', category: '', price: 0, recipe: [] });
     }
     setIsModalOpen(true);
   };
@@ -193,9 +203,9 @@ const ProductData = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kode Produk</label>
                   <input 
-                    type="text" required
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
-                    value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
+                    type="text" required readOnly
+                    className="w-full bg-gray-200 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-500 cursor-not-allowed focus:outline-none transition-all duration-200"
+                    value={formData.code}
                   />
                 </div>
                 <div>
