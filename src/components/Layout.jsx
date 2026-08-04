@@ -15,13 +15,18 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Settings,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
+  const { currentUser, logout, hasAccess } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(activeTab?.startsWith('settings_') || false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -37,7 +42,13 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
   const settingItems = [
     { id: 'settings_invoice', label: 'Atur Invoice' },
     { id: 'settings_export', label: 'Export Masal' },
+    { id: 'settings_account', label: 'Atur Akun' },
+    { id: 'settings_users', label: 'Manage User' },
+    { id: 'settings_roles', label: 'Atur Role' },
   ];
+
+  const visibleMenuItems = menuItems.filter(item => hasAccess(item.id));
+  const visibleSettingItems = settingItems.filter(item => hasAccess(item.id));
 
   const handleFabClick = (type) => {
     setActiveTab(type);
@@ -72,7 +83,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
           </button>
         </div>
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto mt-4">
-          {menuItems.map(item => (
+          {visibleMenuItems.map(item => (
             <button 
               key={item.id}
               onClick={() => {
@@ -91,39 +102,41 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
           ))}
           
           {/* Pengaturan Dropdown */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <button 
-              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-medium transition-all duration-200 text-slate-600 hover:bg-amber-50 hover:text-amber-600"
-            >
-              <div className="flex items-center gap-3">
-                <Settings className="w-5 h-5" />
-                Pengaturan
-              </div>
-              {isSettingsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            </button>
-            
-            {isSettingsOpen && (
-              <div className="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 pl-3">
-                {settingItems.map(item => (
-                  <button 
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      activeTab === item.id 
-                        ? 'bg-amber-100 text-amber-700 font-bold' 
-                        : 'text-slate-500 hover:bg-amber-50 hover:text-amber-600'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {visibleSettingItems.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <button 
+                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-medium transition-all duration-200 text-slate-600 hover:bg-amber-50 hover:text-amber-600"
+              >
+                <div className="flex items-center gap-3">
+                  <Settings className="w-5 h-5" />
+                  Pengaturan
+                </div>
+                {isSettingsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+              </button>
+              
+              {isSettingsOpen && (
+                <div className="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 pl-3">
+                  {visibleSettingItems.map(item => (
+                    <button 
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        activeTab === item.id 
+                          ? 'bg-amber-100 text-amber-700 font-bold' 
+                          : 'text-slate-500 hover:bg-amber-50 hover:text-amber-600'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
       </aside>
 
@@ -142,10 +155,49 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
               {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">
-              AD
-            </div>
+          <div className="flex items-center gap-4 relative">
+            <button 
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center gap-2 hover:bg-gray-100 p-1.5 rounded-xl transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm overflow-hidden">
+                {currentUser?.profilePic ? (
+                  <img src={currentUser.profilePic} alt={currentUser.name} className="w-full h-full object-cover" />
+                ) : (
+                  currentUser?.name?.substring(0, 2).toUpperCase() || 'AD'
+                )}
+              </div>
+              <div className="hidden md:block text-left">
+                <div className="text-sm font-bold text-gray-700">{currentUser?.name || 'Administrator'}</div>
+              </div>
+              <ChevronDown size={16} className="text-gray-500" />
+            </button>
+            
+            {isProfileOpen && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-popup">
+                <button 
+                  onClick={() => {
+                    setActiveTab('settings_account');
+                    setIsProfileOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                >
+                  <User size={16} />
+                  Profile Saya
+                </button>
+                <div className="border-t border-gray-100 my-1"></div>
+                <button 
+                  onClick={() => {
+                    logout();
+                    setIsProfileOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Keluar
+                </button>
+              </div>
+            )}
           </div>
         </header>
 

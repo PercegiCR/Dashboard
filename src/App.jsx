@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import VendorData from './components/master/VendorData';
@@ -13,8 +14,19 @@ import InvoicePO from './components/invoice/InvoicePO';
 import InvoiceSettings from './components/settings/InvoiceSettings';
 import ExportData from './components/settings/ExportData';
 
+// New auth & settings components
+import Login from './components/auth/Login';
+import AccountSettings from './components/settings/AccountSettings';
+import UserManagement from './components/settings/UserManagement';
+import RoleManagement from './components/settings/RoleManagement';
+
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { currentUser } = useAuth();
+
+  if (!currentUser) {
+    return <Login />;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -42,6 +54,12 @@ function App() {
         return <InvoiceSettings />;
       case 'settings_export':
         return <ExportData />;
+      case 'settings_account':
+        return <AccountSettings />;
+      case 'settings_users':
+        return <UserManagement />;
+      case 'settings_roles':
+        return <RoleManagement />;
       default:
         return <div><h1>Dashboard</h1></div>;
     }
