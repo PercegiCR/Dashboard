@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,8 +17,4 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const analytics = getAnalytics(app);
-
-// Initialize Firestore with persistent local cache for offline-first performance
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
-});
+export const db = getFirestore(app);
