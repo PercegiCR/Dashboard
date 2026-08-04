@@ -244,6 +244,7 @@ const SalesOrder = ({ setActiveTab }) => {
               <th className="p-4 font-semibold">No. SO</th>
               <th className="p-4 font-semibold">Tanggal</th>
               <th className="p-4 font-semibold">Customer</th>
+              <th className="p-4 font-semibold">Item Pesanan</th>
               <th className="p-4 font-semibold text-right">Total</th>
               <th className="p-4 font-semibold">Status</th>
               <th className="p-4 font-semibold text-right">Aksi</th>
@@ -255,6 +256,24 @@ const SalesOrder = ({ setActiveTab }) => {
                 <td className="p-4 font-mono text-sm text-amber-600 font-bold">{so.soNumber}</td>
                 <td className="p-4">{so.date}</td>
                 <td className="p-4 font-medium text-gray-900">{getCustomerName(so.customerId)}</td>
+                <td className="p-4">
+                  <div className="flex flex-col gap-1.5 max-h-24 overflow-y-auto custom-scrollbar pr-2 max-w-sm">
+                    {so.items.map((item, idx) => (
+                      <div key={idx} className="text-sm">
+                        <span className="font-semibold text-gray-800">{item.qty}x {item.name}</span>
+                        {(item.size || (item.temperature && item.temperature !== 'Normal') || (item.sugarLevel && item.sugarLevel !== 'Normal') || (item.shotCount > 0) || item.notes) && (
+                          <div className="text-[11px] text-gray-500 flex flex-wrap gap-x-1.5 mt-0.5">
+                            {item.size && <span>• {item.size}</span>}
+                            {item.temperature && item.temperature !== 'Normal' && <span>• {item.temperature}</span>}
+                            {item.sugarLevel && item.sugarLevel !== 'Normal' && <span>• {item.sugarLevel}</span>}
+                            {item.shotCount > 0 && <span>• +{item.shotCount} Shot</span>}
+                            {item.notes && <span className="italic text-gray-400">({item.notes})</span>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </td>
                 <td className="p-4 text-right font-bold text-emerald-600">{formatRp(so.total)}</td>
                 <td className="p-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${so.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
@@ -285,7 +304,7 @@ const SalesOrder = ({ setActiveTab }) => {
             ))}
             {filteredsalesOrders.length === 0 && (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-gray-500">Belum ada transaksi Sales Order.</td>
+                <td colSpan="7" className="p-8 text-center text-gray-500">Belum ada transaksi Sales Order.</td>
               </tr>
             )}
           </tbody>
