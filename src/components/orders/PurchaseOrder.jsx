@@ -160,7 +160,7 @@ const PurchaseOrder = ({ setActiveTab }) => {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-24">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Purchase Order (PO)</h1>
@@ -210,23 +210,25 @@ const PurchaseOrder = ({ setActiveTab }) => {
                     {po.status}
                   </span>
                 </td>
-                <td className="p-4 flex justify-end gap-3">
-                  {po.status === 'Hutang' && (
-                    <>
-                      <button onClick={() => markAsLunas(po.id)} title="Tandai Lunas" className="text-emerald-500 hover:text-emerald-700 transition-colors p-1">
-                        <Check size={18} />
-                      </button>
-                      <button onClick={() => handleEditModal(po)} title="Edit PO" className="text-amber-500 hover:text-amber-700 transition-colors p-1">
-                        <Edit size={18} />
-                      </button>
-                    </>
-                  )}
-                  <button onClick={() => { localStorage.setItem('print_po', po.id); setActiveTab('invoice_po'); }} title="Cetak PO" className="text-blue-500 hover:text-blue-700 transition-colors p-1">
-                    <FileText size={18} />
-                  </button>
-                  <button onClick={() => handleDeletePO(po.id)} title="Hapus PO" className="text-red-500 hover:text-red-700 transition-colors p-1">
-                    <Trash2 size={18} />
-                  </button>
+                <td className="p-4">
+                  <div className="flex justify-end gap-2">
+                    {po.status === 'Hutang' && (
+                      <>
+                        <button onClick={() => markAsLunas(po.id)} title="Tandai Lunas" className="text-emerald-500 hover:text-emerald-700 transition-colors p-2">
+                          <Check size={18} />
+                        </button>
+                        <button onClick={() => handleEditModal(po)} title="Edit PO" className="text-amber-500 hover:text-amber-700 transition-colors p-2">
+                          <Edit size={18} />
+                        </button>
+                      </>
+                    )}
+                    <button onClick={() => { localStorage.setItem('print_po', po.id); setActiveTab('invoice_po'); }} title="Cetak PO" className="text-blue-500 hover:text-blue-700 transition-colors p-2 relative z-10">
+                      <FileText size={18} />
+                    </button>
+                    <button onClick={() => handleDeletePO(po.id)} title="Hapus PO" className="text-red-500 hover:text-red-700 transition-colors p-2">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

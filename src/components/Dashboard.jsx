@@ -202,11 +202,18 @@ const Dashboard = ({ setActiveTab }) => {
     const start = daysAgo(period);
     const numDays = period;
 
+    const toLocalDateString = (dateObj) => {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     // Build array of date strings for each day in range
     const days = Array.from({ length: numDays }, (_, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
-      return d.toISOString().split('T')[0];
+      return toLocalDateString(d);
     });
 
     const rev = {};
@@ -214,11 +221,11 @@ const Dashboard = ({ setActiveTab }) => {
     days.forEach(d => { rev[d] = 0; exp[d] = 0; });
 
     salesOrders.forEach(so => {
-      const d = so.date;
+      const d = toLocalDateString(new Date(so.date));
       if (rev[d] !== undefined) rev[d] += (so.total || 0);
     });
     purchaseOrders.forEach(po => {
-      const d = po.date;
+      const d = toLocalDateString(new Date(po.date));
       if (exp[d] !== undefined) exp[d] += (po.total || 0);
     });
 

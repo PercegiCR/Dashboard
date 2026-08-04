@@ -168,7 +168,7 @@ const SalesOrder = ({ setActiveTab }) => {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-24">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Sales Order (SO)</h1>
@@ -218,23 +218,25 @@ const SalesOrder = ({ setActiveTab }) => {
                     {so.status}
                   </span>
                 </td>
-                <td className="p-4 flex justify-end gap-3">
-                  {so.status === 'Pending' && (
-                    <>
-                      <button onClick={() => markAsLunas(so.id)} title="Tandai Lunas" className="text-emerald-500 hover:text-emerald-700 transition-colors p-1">
-                        <Check size={18} />
-                      </button>
-                      <button onClick={() => handleEditModal(so)} title="Edit SO" className="text-amber-500 hover:text-amber-700 transition-colors p-1">
-                        <Edit size={18} />
-                      </button>
-                    </>
-                  )}
-                  <button onClick={() => { localStorage.setItem('print_so', so.id); setActiveTab('invoice_so'); }} title="Cetak Invoice" className="text-blue-500 hover:text-blue-700 transition-colors p-1">
-                    <FileText size={18} />
-                  </button>
-                  <button onClick={() => handleDeleteSO(so.id)} title="Hapus SO" className="text-red-500 hover:text-red-700 transition-colors p-1">
-                    <Trash2 size={18} />
-                  </button>
+                <td className="p-4">
+                  <div className="flex justify-end gap-2">
+                    {so.status === 'Pending' && (
+                      <>
+                        <button onClick={() => markAsLunas(so.id)} title="Tandai Lunas" className="text-emerald-500 hover:text-emerald-700 transition-colors p-2">
+                          <Check size={18} />
+                        </button>
+                        <button onClick={() => handleEditModal(so)} title="Edit SO" className="text-amber-500 hover:text-amber-700 transition-colors p-2">
+                          <Edit size={18} />
+                        </button>
+                      </>
+                    )}
+                    <button onClick={() => { localStorage.setItem('print_so', so.id); setActiveTab('invoice_so'); }} title="Cetak Invoice" className="text-blue-500 hover:text-blue-700 transition-colors p-2 relative z-10">
+                      <FileText size={18} />
+                    </button>
+                    <button onClick={() => handleDeleteSO(so.id)} title="Hapus SO" className="text-red-500 hover:text-red-700 transition-colors p-2">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
