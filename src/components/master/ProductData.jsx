@@ -69,9 +69,9 @@ const ProductData = () => {
     setIsProduceModalOpen(true);
   };
 
-  const handleProduce = (e) => {
+  const handleProduce = async (e) => {
     e.preventDefault();
-    const res = produceProduct(produceData.productId, produceData.qty);
+    const res = await produceProduct(produceData.productId, produceData.qty);
     if (res.success) {
       setIsProduceModalOpen(false);
     } else {
