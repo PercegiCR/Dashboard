@@ -14,6 +14,8 @@ const SalesOrder = ({ setActiveTab }) => {
   const [qty, setQty] = useState(1);
   const [itemNotes, setItemNotes] = useState('');
   const [sugarLevel, setSugarLevel] = useState('Normal');
+  const [shotCount, setShotCount] = useState(0);
+  const [size, setSize] = useState('150 ml');
   const [searchTerm, setSearchTerm] = useState('');
   const [extraShotCost, setExtraShotCost] = useState(0);
   const [temperature, setTemperature] = useState('Normal');
@@ -57,7 +59,7 @@ const SalesOrder = ({ setActiveTab }) => {
         return;
       }
 
-      const additionalCost = sugarLevel === 'Extra Shot' ? Number(extraShotCost) : 0;
+      const additionalCost = Number(shotCount) > 0 ? Number(extraShotCost) : 0;
       const finalPrice = (Number(product.price) || 0) + additionalCost;
 
       const newItem = {
@@ -66,6 +68,8 @@ const SalesOrder = ({ setActiveTab }) => {
         price: Number(product.price) || 0,
         qty: Number(qty),
         sugarLevel,
+        shotCount: Number(shotCount),
+        size,
         extraShotCost: additionalCost,
         temperature,
         notes: itemNotes,
@@ -81,7 +85,8 @@ const SalesOrder = ({ setActiveTab }) => {
       setQty(1);
       setItemNotes('');
       setSugarLevel('Normal');
-      setExtraShotCost(0);
+      setShotCount(0);
+      setSize('150 ml');
       setExtraShotCost(0);
       setTemperature('Normal');
     } catch (error) {
@@ -306,7 +311,7 @@ const SalesOrder = ({ setActiveTab }) => {
                   </h3>
                   
                   <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Produk</label>
                         <select 
@@ -315,6 +320,18 @@ const SalesOrder = ({ setActiveTab }) => {
                         >
                           <option value="">Pilih Produk...</option>
                           {products.map(p => <option key={p.id} value={p.id}>{p.name} - {formatRp(p.price)}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Ukuran</label>
+                        <select
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          value={size} onChange={e => setSize(e.target.value)}
+                        >
+                          <option value="150 ml">150 ml</option>
+                          <option value="300 ml">300 ml</option>
+                          <option value="600 ml">600 ml</option>
+                          <option value="1 Liter">1 Liter</option>
                         </select>
                       </div>
                       <div>
@@ -340,7 +357,7 @@ const SalesOrder = ({ setActiveTab }) => {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Gula / Shot</label>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Gula</label>
                         <select
                           className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                           value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
@@ -348,20 +365,27 @@ const SalesOrder = ({ setActiveTab }) => {
                           <option value="Normal">Normal</option>
                           <option value="Less Sugar">Less Sugar</option>
                           <option value="No Sugar">No Sugar</option>
-                          <option value="Extra Shot">Extra Shot</option>
                         </select>
                       </div>
-                      {sugarLevel === 'Extra Shot' && (
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Biaya Extra</label>
+                      <div className="flex gap-2">
+                        <div className="w-1/2">
+                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Extra Shot</label>
                           <input 
-                            type="number" min="0" placeholder="Nominal"
+                            type="number" min="0" placeholder="0"
                             className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            value={shotCount} onChange={e => setShotCount(e.target.value)}
+                          />
+                        </div>
+                        <div className="w-1/2">
+                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Biaya Shot</label>
+                          <input 
+                            type="number" min="0" placeholder="0" disabled={Number(shotCount) <= 0}
+                            className={`w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all ${Number(shotCount) <= 0 ? 'opacity-50 cursor-not-allowed' : 'focus:bg-white'}`}
                             value={extraShotCost} onChange={e => setExtraShotCost(e.target.value)}
                           />
                         </div>
-                      )}
-                      <div className={sugarLevel === 'Extra Shot' ? "md:col-span-1" : "md:col-span-2"}>
+                      </div>
+                      <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Catatan</label>
                         <input 
                           type="text" placeholder="Contoh: Es dipisah, dll"
@@ -402,9 +426,15 @@ const SalesOrder = ({ setActiveTab }) => {
                               {item.temperature && item.temperature !== 'Normal' && (
                                 <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md font-medium">Temp: {item.temperature}</span>
                               )}
+                              {item.size && (
+                                <span className="bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded-md font-medium">Size: {item.size}</span>
+                              )}
                               {item.sugarLevel && item.sugarLevel !== 'Normal' && (
-                                <span className="bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-md font-medium">
-                                  {item.sugarLevel} {item.extraShotCost > 0 ? `(+${formatRp(item.extraShotCost)})` : ''}
+                                <span className="bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-md font-medium">Gula: {item.sugarLevel}</span>
+                              )}
+                              {item.shotCount > 0 && (
+                                <span className="bg-orange-50 text-orange-700 border border-orange-100 px-2 py-0.5 rounded-md font-medium">
+                                  +{item.shotCount} Shot {item.extraShotCost > 0 ? `(+${formatRp(item.extraShotCost)})` : ''}
                                 </span>
                               )}
                               {item.notes && <span className="text-gray-400 italic mt-0.5">"{item.notes}"</span>}
