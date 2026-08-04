@@ -81,7 +81,7 @@ const AccountSettings = () => {
         <div className="flex flex-col md:flex-row gap-8 mb-8">
           {/* Profile Picture Section */}
           <div className="flex-shrink-0 flex flex-col items-center">
-            <div className="w-32 h-32 rounded-full border-4 border-amber-50 bg-gray-100 overflow-hidden mb-4 relative group">
+            <label className="w-32 h-32 rounded-full border-4 border-amber-50 bg-gray-100 overflow-hidden mb-4 relative group cursor-pointer block">
               {profilePic ? (
                 <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
               ) : (
@@ -89,11 +89,11 @@ const AccountSettings = () => {
                   <User size={48} />
                 </div>
               )}
-              <label className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer text-white transition-all">
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-all">
                 <Upload size={24} />
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-              </label>
-            </div>
+              </div>
+              <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+            </label>
             <p className="text-sm text-gray-500 font-medium text-center">Klik foto untuk ubah</p>
           </div>
 
