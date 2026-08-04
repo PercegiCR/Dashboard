@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useMemo, useCallback } from 'react';
 
 const AuthContext = createContext();
 
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = (username, password) => {
+  const login = useCallback((username, password) => {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     const user = users.find(u => u.username === username && u.password === password);
     
@@ -52,46 +52,52 @@ export const AuthProvider = ({ children }) => {
     }
     
     return { success: false, message: 'Username atau password salah' };
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setCurrentUser(null);
     localStorage.removeItem('currentUser');
-  };
+  }, []);
 
-  const updateProfile = (updates) => {
-    const updatedUser = { ...currentUser, ...updates };
-    setCurrentUser(updatedUser);
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    
-    // Also update in users list
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const userIndex = users.findIndex(u => u.id === updatedUser.id);
-    if (userIndex !== -1) {
-      users[userIndex] = updatedUser;
-      localStorage.setItem('users', JSON.stringify(users));
-    }
-  };
+  const updateProfile = useCallback((updates) => {
+    setCurrentUser(prev => {
+      const updatedUser = { ...prev, ...updates };
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      // Also update in users list
+      const users = JSON.parse(localStorage.getItem('users')) || [];
+      const userIndex = users.findIndex(u => u.id === updatedUser.id);
+      if (userIndex !== -1) {
+        users[userIndex] = updatedUser;
+        localStorage.setItem('users', JSON.stringify(users));
+      }
+      return updatedUser;
+    });
+  }, []);
 
-  const getRole = (roleId) => {
+  const getRole = useCallback((roleId) => {
     const roles = JSON.parse(localStorage.getItem('roles')) || [];
     return roles.find(r => r.id === roleId);
-  };
+  }, []);
 
-  const hasAccess = (pageId) => {
+  const hasAccess = useCallback((pageId) => {
     if (!currentUser) return false;
     const role = getRole(currentUser.roleId);
     if (!role) return false;
     if (role.access.includes('all')) return true;
     return role.access.includes(pageId);
-  };
+  }, [currentUser, getRole]);
+
+  const value = useMemo(() => ({
+    currentUser, login, logout, updateProfile, getRole, hasAccess
+  }), [currentUser, login, logout, updateProfile, getRole, hasAccess]);
 
   if (loading) {
     return <div className="flex h-screen items-center justify-center bg-gray-50"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>;
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout, updateProfile, getRole, hasAccess }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

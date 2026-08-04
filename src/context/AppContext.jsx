@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, setDoc } from 'firebase/firestore';
 
@@ -95,56 +95,56 @@ export const AppProvider = ({ children }) => {
     };
   }, []);
 
-  const updateSettings = async (newSettings) => {
+  const updateSettings = useCallback(async (newSettings) => {
     const updated = { ...settings, ...newSettings };
     await setDoc(doc(db, 'settings', 'global'), updated, { merge: true });
-  };
+  }, [settings]);
 
-  const addVendor = async (vendor) => {
+  const addVendor = useCallback(async (vendor) => {
     const { id: _id, ...rest } = vendor;
     await addDoc(collection(db, 'vendors'), rest);
-  };
-  const updateVendor = async (id, vendor) => {
+  }, []);
+  const updateVendor = useCallback(async (id, vendor) => {
     await updateDoc(doc(db, 'vendors', id), vendor);
-  };
-  const deleteVendor = async (id) => {
+  }, []);
+  const deleteVendor = useCallback(async (id) => {
     await deleteDoc(doc(db, 'vendors', id));
-  };
+  }, []);
 
-  const addCustomer = async (customer) => {
+  const addCustomer = useCallback(async (customer) => {
     const { id: _id, ...rest } = customer;
     await addDoc(collection(db, 'customers'), rest);
-  };
-  const updateCustomer = async (id, customer) => {
+  }, []);
+  const updateCustomer = useCallback(async (id, customer) => {
     await updateDoc(doc(db, 'customers', id), customer);
-  };
-  const deleteCustomer = async (id) => {
+  }, []);
+  const deleteCustomer = useCallback(async (id) => {
     await deleteDoc(doc(db, 'customers', id));
-  };
+  }, []);
 
-  const addInventory = async (item) => {
+  const addInventory = useCallback(async (item) => {
     const { id: _id, ...rest } = item;
     await addDoc(collection(db, 'inventory'), rest);
-  };
-  const updateInventory = async (id, item) => {
+  }, []);
+  const updateInventory = useCallback(async (id, item) => {
     await updateDoc(doc(db, 'inventory', id), item);
-  };
-  const deleteInventory = async (id) => {
+  }, []);
+  const deleteInventory = useCallback(async (id) => {
     await deleteDoc(doc(db, 'inventory', id));
-  };
+  }, []);
 
-  const addProduct = async (product) => {
+  const addProduct = useCallback(async (product) => {
     const { id: _id, ...rest } = product;
     await addDoc(collection(db, 'products'), { stock: 0, recipe: [], ...rest });
-  };
-  const updateProduct = async (id, product) => {
+  }, []);
+  const updateProduct = useCallback(async (id, product) => {
     await updateDoc(doc(db, 'products', id), product);
-  };
-  const deleteProduct = async (id) => {
+  }, []);
+  const deleteProduct = useCallback(async (id) => {
     await deleteDoc(doc(db, 'products', id));
-  };
+  }, []);
 
-  const produceProduct = async (productId, qty) => {
+  const produceProduct = useCallback(async (productId, qty) => {
     const product = products.find(p => p.id === productId);
     if (!product) return { success: false, message: 'Produk tidak ditemukan' };
 
@@ -189,9 +189,9 @@ export const AppProvider = ({ children }) => {
       console.error(e);
       return { success: false, message: 'Gagal memproduksi karena error server' };
     }
-  };
+  }, [products, inventory]);
 
-  const addSalesOrder = async (so) => {
+  const addSalesOrder = useCallback(async (so) => {
     const { id: _id, ...rest } = so;
     const newSoNumber = generateOrderNumber('SO', salesOrders, 'soNumber');
     
@@ -215,11 +215,12 @@ export const AppProvider = ({ children }) => {
     } catch (e) {
       console.error(e);
     }
-  };
-  const updateSalesOrder = async (id, so) => {
+  }, [salesOrders, products]);
+
+  const updateSalesOrder = useCallback(async (id, so) => {
     await updateDoc(doc(db, 'salesOrders', id), so);
-  };
-  const deleteSalesOrder = async (id) => {
+  }, []);
+  const deleteSalesOrder = useCallback(async (id) => {
     const so = salesOrders.find(s => s.id === id);
     if (!so) return;
 
@@ -242,21 +243,22 @@ export const AppProvider = ({ children }) => {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [salesOrders, products]);
 
-  const addPurchaseOrder = async (po) => {
+  const addPurchaseOrder = useCallback(async (po) => {
     const { id: _id, ...rest } = po;
     const newPoNumber = generateOrderNumber('PO', purchaseOrders, 'poNumber');
     await addDoc(collection(db, 'purchaseOrders'), { poNumber: newPoNumber, date: new Date().toISOString().split('T')[0], ...rest });
-  };
-  const updatePurchaseOrder = async (id, po) => {
+  }, [purchaseOrders]);
+  const updatePurchaseOrder = useCallback(async (id, po) => {
     await updateDoc(doc(db, 'purchaseOrders', id), po);
-  };
-  const deletePurchaseOrder = async (id) => {
+  }, []);
+  const deletePurchaseOrder = useCallback(async (id) => {
     await deleteDoc(doc(db, 'purchaseOrders', id));
-  };
+  }, []);
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     settings, updateSettings,
     vendors, addVendor, updateVendor, deleteVendor,
     customers, addCustomer, updateCustomer, deleteCustomer,
@@ -264,7 +266,15 @@ export const AppProvider = ({ children }) => {
     products, addProduct, updateProduct, deleteProduct, produceProduct,
     salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder,
     purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
-  };
+  }), [
+    settings, updateSettings,
+    vendors, addVendor, updateVendor, deleteVendor,
+    customers, addCustomer, updateCustomer, deleteCustomer,
+    inventory, addInventory, updateInventory, deleteInventory,
+    products, addProduct, updateProduct, deleteProduct, produceProduct,
+    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder,
+    purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
+  ]);
 
   return (
     <AppContext.Provider value={value}>
