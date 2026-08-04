@@ -19,7 +19,7 @@ import {
   LogOut,
   User
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
   const { currentUser, logout, hasAccess } = useAuth();
