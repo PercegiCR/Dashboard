@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Coffee, 
   LayoutDashboard, 
@@ -22,7 +22,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
-  const { currentUser, logout, hasAccess } = useAuth();
+  const { currentUser, logout, getRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(activeTab?.startsWith('settings_') || false);
@@ -47,8 +47,25 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
     { id: 'settings_roles', label: 'Atur Role' },
   ];
 
-  const visibleMenuItems = menuItems.filter(item => hasAccess(item.id));
-  const visibleSettingItems = settingItems.filter(item => hasAccess(item.id));
+  const userRole = useMemo(() => {
+    return currentUser ? getRole(currentUser.roleId) : null;
+  }, [currentUser, getRole]);
+
+  const visibleMenuItems = useMemo(() => {
+    return menuItems.filter(item => {
+      if (!userRole) return false;
+      if (userRole.access.includes('all')) return true;
+      return userRole.access.includes(item.id);
+    });
+  }, [userRole]);
+
+  const visibleSettingItems = useMemo(() => {
+    return settingItems.filter(item => {
+      if (!userRole) return false;
+      if (userRole.access.includes('all')) return true;
+      return userRole.access.includes(item.id);
+    });
+  }, [userRole]);
 
   const handleFabClick = (type) => {
     setActiveTab(type);

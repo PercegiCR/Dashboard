@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import VendorData from './components/master/VendorData';
-import CustomerData from './components/master/CustomerData';
-import InventoryData from './components/master/InventoryData';
-import ProductData from './components/master/ProductData';
-import SalesOrder from './components/orders/SalesOrder';
-import PurchaseOrder from './components/orders/PurchaseOrder';
-import FinanceDashboard from './components/finance/FinanceDashboard';
-import InvoiceSO from './components/invoice/InvoiceSO';
-import InvoicePO from './components/invoice/InvoicePO';
-import InvoiceSettings from './components/settings/InvoiceSettings';
-import ExportData from './components/settings/ExportData';
-
-// New auth & settings components
 import Login from './components/auth/Login';
-import AccountSettings from './components/settings/AccountSettings';
-import UserManagement from './components/settings/UserManagement';
-import RoleManagement from './components/settings/RoleManagement';
+
+// Lazy loaded components for code splitting
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const VendorData = lazy(() => import('./components/master/VendorData'));
+const CustomerData = lazy(() => import('./components/master/CustomerData'));
+const InventoryData = lazy(() => import('./components/master/InventoryData'));
+const ProductData = lazy(() => import('./components/master/ProductData'));
+const SalesOrder = lazy(() => import('./components/orders/SalesOrder'));
+const PurchaseOrder = lazy(() => import('./components/orders/PurchaseOrder'));
+const FinanceDashboard = lazy(() => import('./components/finance/FinanceDashboard'));
+const InvoiceSO = lazy(() => import('./components/invoice/InvoiceSO'));
+const InvoicePO = lazy(() => import('./components/invoice/InvoicePO'));
+const InvoiceSettings = lazy(() => import('./components/settings/InvoiceSettings'));
+const ExportData = lazy(() => import('./components/settings/ExportData'));
+const AccountSettings = lazy(() => import('./components/settings/AccountSettings'));
+const UserManagement = lazy(() => import('./components/settings/UserManagement'));
+const RoleManagement = lazy(() => import('./components/settings/RoleManagement'));
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -67,7 +67,9 @@ function App() {
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-      {renderContent()}
+      <Suspense fallback={<div className="w-full h-full flex items-center justify-center p-8"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+        {renderContent()}
+      </Suspense>
     </Layout>
   );
 }
