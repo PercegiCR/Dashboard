@@ -4,11 +4,15 @@ import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lu
 import Swal from 'sweetalert2';
 
 const SalesOrder = ({ setActiveTab }) => {
-  const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder } = useAppContext();
+  const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ 
     id: null, customerId: '', status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 
   });
+  
+  const [customerInput, setCustomerInput] = useState('');
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
   
   const [selectedProduct, setSelectedProduct] = useState('');
   const [qty, setQty] = useState(1);
@@ -22,6 +26,8 @@ const SalesOrder = ({ setActiveTab }) => {
 
   const handleOpenModal = () => {
     setFormData({ id: null, customerId: '', status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 });
+    setCustomerInput('');
+    setSelectedCustomerId('');
     setIsModalOpen(true);
   };
 
@@ -40,8 +46,21 @@ const SalesOrder = ({ setActiveTab }) => {
       taxType: so.taxType || 'Non Pajak',
       taxRate: so.taxRate || 0
     });
+    const c = customers.find(cust => cust.id === so.customerId);
+    setCustomerInput(c ? c.name : '');
+    setSelectedCustomerId(so.customerId);
     setIsModalOpen(true);
   };
+
+  const handleCustomerInputChange = (e) => {
+    setCustomerInput(e.target.value);
+    setSelectedCustomerId('');
+    setShowCustomerSuggestions(true);
+  };
+
+  const customerSuggestions = customers.filter(c => 
+    c.name.toLowerCase().includes(customerInput.toLowerCase())
+  );
 
   const addItem = () => {
     try {
@@ -104,15 +123,39 @@ const SalesOrder = ({ setActiveTab }) => {
   const getTaxAmount = () => getSubtotal() * (formData.taxRate / 100);
   const getTotal = () => getSubtotal() + getTaxAmount();
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (formData.items.length === 0) {
       Swal.fire('Perhatian', 'Pilih minimal 1 item produk!', 'warning');
       return;
     }
     
+    if (!customerInput.trim()) {
+      Swal.fire('Perhatian', 'Nama customer tidak boleh kosong!', 'warning');
+      return;
+    }
+
+    let finalCustomerId = selectedCustomerId;
+
+    if (!finalCustomerId) {
+      // Check if duplicate name exists
+      const existingCustomer = customers.find(c => c.name.toLowerCase() === customerInput.trim().toLowerCase());
+      if (existingCustomer) {
+        Swal.fire('Perhatian', 'Nama customer sudah terdaftar. Jika ini orang yang berbeda, mohon tambahkan nama belakang untuk pembeda.', 'warning');
+        return;
+      }
+      
+      // Save new customer
+      finalCustomerId = await addCustomer({ 
+        name: customerInput.trim(), 
+        type: 'Umum', 
+        phone: '', 
+        address: '' 
+      });
+    }
+
     const dataToSave = {
-      customerId: formData.customerId,
+      customerId: finalCustomerId,
       items: formData.items,
       subtotal: getSubtotal(),
       taxType: formData.taxType,
@@ -265,16 +308,41 @@ const SalesOrder = ({ setActiveTab }) => {
             
             <form onSubmit={handleSave} className="flex flex-col gap-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Customer</label>
-                  <select 
+                  <input 
+                    type="text"
                     required
+                    placeholder="Ketik nama customer..."
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
-                    value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})}
-                  >
-                    <option value="">Pilih Customer...</option>
-                    {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}
-                  </select>
+                    value={customerInput}
+                    onChange={handleCustomerInputChange}
+                    onFocus={() => setShowCustomerSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowCustomerSuggestions(false), 200)}
+                  />
+                  {showCustomerSuggestions && customerInput && (
+                    <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
+                      {customerSuggestions.length > 0 ? (
+                        customerSuggestions.map(c => (
+                          <li 
+                            key={c.id} 
+                            className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800"
+                            onClick={() => {
+                              setCustomerInput(c.name);
+                              setSelectedCustomerId(c.id);
+                              setShowCustomerSuggestions(false);
+                            }}
+                          >
+                            {c.name} ({c.type})
+                          </li>
+                        ))
+                      ) : (
+                        <li className="px-4 py-2 text-sm text-gray-500 italic">
+                          "{customerInput}" akan disimpan sebagai customer baru
+                        </li>
+                      )}
+                    </ul>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status Pembayaran</label>

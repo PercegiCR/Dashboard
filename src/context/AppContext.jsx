@@ -130,6 +130,7 @@ export const AppProvider = ({ children }) => {
     const { id: _id, ...rest } = customer;
     const customId = generateCustomId('CST', customers);
     await setDoc(doc(db, 'customers', customId), rest);
+    return customId;
   }, [customers]);
   const updateCustomer = useCallback(async (id, customer) => {
     await updateDoc(doc(db, 'customers', id), customer);
