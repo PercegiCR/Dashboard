@@ -46,6 +46,20 @@ const generateOrderNumber = (prefix, existingOrders, fieldName) => {
   return `${datePrefix}${String(nextSeq).padStart(2, '0')}`;
 };
 
+const generateCustomId = (prefix, existingList) => {
+  let maxSeq = 0;
+  existingList.forEach(item => {
+    if (item.id && item.id.startsWith(prefix + '-')) {
+      const seq = parseInt(item.id.replace(prefix + '-', ''), 10);
+      if (!isNaN(seq) && seq > maxSeq) {
+        maxSeq = seq;
+      }
+    }
+  });
+  const nextSeq = maxSeq + 1;
+  return `${prefix}-${String(nextSeq).padStart(4, '0')}`;
+};
+
 export const AppProvider = ({ children }) => {
   const [vendors, setVendors] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -102,8 +116,9 @@ export const AppProvider = ({ children }) => {
 
   const addVendor = useCallback(async (vendor) => {
     const { id: _id, ...rest } = vendor;
-    await addDoc(collection(db, 'vendors'), rest);
-  }, []);
+    const customId = generateCustomId('VDR', vendors);
+    await setDoc(doc(db, 'vendors', customId), rest);
+  }, [vendors]);
   const updateVendor = useCallback(async (id, vendor) => {
     await updateDoc(doc(db, 'vendors', id), vendor);
   }, []);
@@ -113,8 +128,9 @@ export const AppProvider = ({ children }) => {
 
   const addCustomer = useCallback(async (customer) => {
     const { id: _id, ...rest } = customer;
-    await addDoc(collection(db, 'customers'), rest);
-  }, []);
+    const customId = generateCustomId('CST', customers);
+    await setDoc(doc(db, 'customers', customId), rest);
+  }, [customers]);
   const updateCustomer = useCallback(async (id, customer) => {
     await updateDoc(doc(db, 'customers', id), customer);
   }, []);
