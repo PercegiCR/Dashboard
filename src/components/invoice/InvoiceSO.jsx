@@ -55,7 +55,7 @@ const InvoiceSO = ({ setActiveTab }) => {
       </div>
 
       {/* Invoice Layout */}
-      <div className="bg-white text-slate-900 p-10 rounded-2xl shadow-xl print:shadow-none print:rounded-none print:p-0">
+      <div className="bg-white text-slate-900 p-10 rounded-2xl shadow-xl print:shadow-none print:rounded-none print:p-8">
         <div className="flex justify-between items-start border-b-2 border-slate-200 pb-8 mb-8">
           <div className="flex items-center gap-4">
             <div className="p-1 rounded-xl">
