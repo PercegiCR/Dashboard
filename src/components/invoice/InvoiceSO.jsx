@@ -105,7 +105,7 @@ const InvoiceSO = ({ setActiveTab }) => {
                       {item.size && <span>• {item.size}</span>}
                       {item.temperature && item.temperature !== 'Normal' && <span>• {item.temperature}</span>}
                       {item.sugarLevel && item.sugarLevel !== 'Normal' && <span>• {item.sugarLevel}</span>}
-                      {item.shotCount > 0 && <span>• +{item.shotCount} Shot</span>}
+                      {item.shotCount > 0 && <span>• Extra Shot</span>}
                       {item.notes && <span className="italic text-slate-400">({item.notes})</span>}
                     </div>
                   )}

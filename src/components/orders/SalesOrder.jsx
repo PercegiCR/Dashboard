@@ -266,7 +266,7 @@ const SalesOrder = ({ setActiveTab }) => {
                             {item.size && <span>• {item.size}</span>}
                             {item.temperature && item.temperature !== 'Normal' && <span>• {item.temperature}</span>}
                             {item.sugarLevel && item.sugarLevel !== 'Normal' && <span>• {item.sugarLevel}</span>}
-                            {item.shotCount > 0 && <span>• +{item.shotCount} Shot</span>}
+                            {item.shotCount > 0 && <span>• Extra Shot</span>}
                             {item.notes && <span className="italic text-gray-400">({item.notes})</span>}
                           </div>
                         )}
@@ -520,7 +520,7 @@ const SalesOrder = ({ setActiveTab }) => {
                               )}
                               {item.shotCount > 0 && (
                                 <span className="bg-orange-50 text-orange-700 border border-orange-100 px-2 py-0.5 rounded-md font-medium">
-                                  +{item.shotCount} Shot {item.extraShotCost > 0 ? `(+${formatRp(item.extraShotCost)})` : ''}
+                                  Extra Shot {item.extraShotCost > 0 ? `(+${formatRp(item.extraShotCost)})` : ''}
                                 </span>
                               )}
                               {item.notes && <span className="text-gray-400 italic mt-0.5">"{item.notes}"</span>}
