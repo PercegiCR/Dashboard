@@ -456,23 +456,20 @@ const SalesOrder = ({ setActiveTab }) => {
                           <option value="No Sugar">No Sugar</option>
                         </select>
                       </div>
-                      <div className="flex gap-2">
-                        <div className="w-1/2">
-                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Extra Shot</label>
-                          <input 
-                            type="number" min="0" placeholder="0"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                            value={shotCount} onChange={e => setShotCount(e.target.value)}
-                          />
-                        </div>
-                        <div className="w-1/2">
-                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Biaya Shot</label>
-                          <input 
-                            type="number" min="0" placeholder="0" disabled={Number(shotCount) <= 0}
-                            className={`w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all ${Number(shotCount) <= 0 ? 'opacity-50 cursor-not-allowed' : 'focus:bg-white'}`}
-                            value={extraShotCost} onChange={e => setExtraShotCost(e.target.value)}
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Extra Shot</label>
+                        <select
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          value={shotCount} 
+                          onChange={e => {
+                            const val = Number(e.target.value);
+                            setShotCount(val);
+                            setExtraShotCost(val > 0 ? 5000 : 0);
+                          }}
+                        >
+                          <option value={0}>Normal</option>
+                          <option value={1}>Extra Shot</option>
+                        </select>
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Catatan</label>
