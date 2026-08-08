@@ -203,9 +203,9 @@ const ProductData = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kode Produk</label>
                   <input 
-                    type="text" required readOnly
-                    className="w-full bg-gray-200 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-500 cursor-not-allowed focus:outline-none transition-all duration-200"
-                    value={formData.code}
+                    type="text" required
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
+                    value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
                   />
                 </div>
                 <div>
@@ -220,17 +220,17 @@ const ProductData = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kategori</label>
-                  <select 
-                    required
+                  <input 
+                    type="text" required list="kategori-options" placeholder="Pilih atau ketik kategori..."
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
                     value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
-                  >
-                    <option value="">Pilih...</option>
-                    <option value="Minuman">Minuman</option>
-                    <option value="Makanan">Makanan</option>
-                    <option value="Snack">Snack</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
+                  />
+                  <datalist id="kategori-options">
+                    <option value="Minuman" />
+                    <option value="Makanan" />
+                    <option value="Snack" />
+                    <option value="Lainnya" />
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Jual</label>
