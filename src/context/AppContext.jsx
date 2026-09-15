@@ -262,6 +262,50 @@ export const AppProvider = ({ children }) => {
     }
   }, [salesOrders, products]);
 
+  const importHistoricalSalesOrders = useCallback(async (historicalData) => {
+    try {
+      const batch = writeBatch(db);
+      let currentCustomers = [...customers];
+      
+      for (const data of historicalData) {
+        let customerId = '';
+        
+        const existingCustomer = currentCustomers.find(c => c.name.toLowerCase() === data.customerName.toLowerCase());
+        if (existingCustomer) {
+          customerId = existingCustomer.id;
+        } else {
+          customerId = generateCustomId('CST', currentCustomers);
+          const newCustomer = { id: customerId, name: data.customerName, type: 'Umum', phone: '', address: '' };
+          currentCustomers.push(newCustomer);
+          
+          const custRef = doc(db, 'customers', customerId);
+          batch.set(custRef, { name: newCustomer.name, type: newCustomer.type, phone: newCustomer.phone, address: newCustomer.address });
+        }
+
+        const newOrderRef = doc(collection(db, 'salesOrders'));
+        const orderData = {
+          soNumber: data.soNumber,
+          date: data.date,
+          customerId: customerId,
+          items: data.items,
+          status: data.status || 'Lunas',
+          taxType: data.taxType || 'Non Pajak',
+          taxRate: data.taxRate || 0,
+          taxAmount: data.taxAmount || 0,
+          subtotal: data.subtotal || 0,
+          total: data.total || 0
+        };
+        batch.set(newOrderRef, orderData);
+      }
+      
+      await batch.commit();
+      return { success: true };
+    } catch (e) {
+      console.error("Import error:", e);
+      return { success: false, error: e.message };
+    }
+  }, [customers]);
+
   const addPurchaseOrder = useCallback(async (po) => {
     const { id: _id, ...rest } = po;
     const newPoNumber = generateOrderNumber('PO', purchaseOrders, 'poNumber');
@@ -281,7 +325,7 @@ export const AppProvider = ({ children }) => {
     customers, addCustomer, updateCustomer, deleteCustomer,
     inventory, addInventory, updateInventory, deleteInventory,
     products, addProduct, updateProduct, deleteProduct, produceProduct,
-    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder,
+    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
     purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
   }), [
     settings, updateSettings,
@@ -289,7 +333,7 @@ export const AppProvider = ({ children }) => {
     customers, addCustomer, updateCustomer, deleteCustomer,
     inventory, addInventory, updateInventory, deleteInventory,
     products, addProduct, updateProduct, deleteProduct, produceProduct,
-    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder,
+    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
     purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
   ]);
 

@@ -4,10 +4,12 @@ import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lu
 import Swal from 'sweetalert2';
 
 const SalesOrder = ({ setActiveTab }) => {
-  const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer } = useAppContext();
+  const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer, importHistoricalSalesOrders } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
   const [formData, setFormData] = useState({ 
-    id: null, customerId: '', status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 
+    id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 
   });
   
   const [customerInput, setCustomerInput] = useState('');
@@ -25,7 +27,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [temperature, setTemperature] = useState('Normal');
 
   const handleOpenModal = () => {
-    setFormData({ id: null, customerId: '', status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 });
+    setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 });
     setCustomerInput('');
     setSelectedCustomerId('');
     setIsModalOpen(true);
@@ -41,6 +43,7 @@ const SalesOrder = ({ setActiveTab }) => {
     setFormData({
       id: so.id,
       customerId: so.customerId,
+      date: so.date || new Date().toISOString().split('T')[0],
       status: so.status,
       items: [...so.items],
       taxType: so.taxType || 'Non Pajak',
@@ -156,6 +159,7 @@ const SalesOrder = ({ setActiveTab }) => {
 
     const dataToSave = {
       customerId: finalCustomerId,
+      date: formData.date,
       items: formData.items,
       subtotal: getSubtotal(),
       taxType: formData.taxType,
@@ -210,6 +214,106 @@ const SalesOrder = ({ setActiveTab }) => {
     return searchStr.includes(searchTerm.toLowerCase());
   });
 
+  const downloadTemplate = () => {
+    const headers = "CustomerName,InvoiceNumber,InvoiceDate,ItemName,ItemPrice,ItemQty,Status,TaxType,TaxRate\n";
+    const example = "Budi,INV-001,2025-01-01,Kopi Susu,20000,2,Lunas,Non Pajak,0\n";
+    const example2 = "Budi,INV-001,2025-01-01,Roti Bakar,15000,1,Lunas,Non Pajak,0\n";
+    const blob = new Blob([headers + example + example2], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'template-import-invoice.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportCSV = (e) => {
+    e.preventDefault();
+    if (!importFile) {
+      Swal.fire('Perhatian', 'Pilih file CSV terlebih dahulu!', 'warning');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        
+        if (lines.length <= 1) {
+          Swal.fire('Error', 'File CSV kosong atau hanya berisi header.', 'error');
+          return;
+        }
+
+        const headers = lines[0].split(',');
+        const salesOrdersMap = {};
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          if (cols.length < 9) continue;
+          
+          const customerName = cols[0].trim();
+          const soNumber = cols[1].trim();
+          const date = cols[2].trim();
+          const itemName = cols[3].trim();
+          const itemPrice = Number(cols[4].trim()) || 0;
+          const itemQty = Number(cols[5].trim()) || 1;
+          const status = cols[6].trim() || 'Lunas';
+          const taxType = cols[7].trim() || 'Non Pajak';
+          const taxRate = Number(cols[8].trim()) || 0;
+
+          const itemSubtotal = itemPrice * itemQty;
+
+          if (!salesOrdersMap[soNumber]) {
+            salesOrdersMap[soNumber] = {
+              soNumber,
+              customerName,
+              date,
+              status,
+              taxType,
+              taxRate,
+              items: [],
+              subtotal: 0,
+              taxAmount: 0,
+              total: 0
+            };
+          }
+
+          salesOrdersMap[soNumber].items.push({
+            name: itemName,
+            price: itemPrice,
+            qty: itemQty,
+            subtotal: itemSubtotal
+          });
+          
+          salesOrdersMap[soNumber].subtotal += itemSubtotal;
+        }
+
+        const historicalData = Object.values(salesOrdersMap).map(order => {
+          const taxAmount = order.subtotal * (order.taxRate / 100);
+          return {
+            ...order,
+            taxAmount,
+            total: order.subtotal + taxAmount
+          };
+        });
+
+        const result = await importHistoricalSalesOrders(historicalData);
+        if (result.success) {
+          Swal.fire('Sukses', 'Data historis berhasil diimport!', 'success');
+          setIsImportModalOpen(false);
+          setImportFile(null);
+        } else {
+          Swal.fire('Gagal', 'Gagal mengimport data: ' + result.error, 'error');
+        }
+
+      } catch (error) {
+        Swal.fire('Error', 'Gagal memproses file CSV.', 'error');
+      }
+    };
+    reader.readAsText(importFile);
+  };
+
   return (
     <div className="flex flex-col gap-6 pb-24">
       <div className="flex justify-between items-center">
@@ -217,12 +321,20 @@ const SalesOrder = ({ setActiveTab }) => {
           <h1 className="text-3xl font-bold text-gray-900">Sales Order (SO)</h1>
           <p className="text-gray-500 mt-1">Catat transaksi penjualan ke pelanggan.</p>
         </div>
-        <button 
-          onClick={handleOpenModal}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-md"
-        >
-          <ShoppingCart size={18} /> Buat Pesanan
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-md"
+          >
+            <FileText size={18} /> Import Data Historis
+          </button>
+          <button 
+            onClick={handleOpenModal}
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-md"
+          >
+            <ShoppingCart size={18} /> Buat Pesanan
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-md border border-gray-100 flex items-center gap-3">
@@ -326,7 +438,7 @@ const SalesOrder = ({ setActiveTab }) => {
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
                 <div className="relative">
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Customer</label>
                   <input 
@@ -362,6 +474,16 @@ const SalesOrder = ({ setActiveTab }) => {
                       )}
                     </ul>
                   )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Invoice</label>
+                  <input 
+                    type="date"
+                    required
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
+                    value={formData.date}
+                    onChange={e => setFormData({...formData, date: e.target.value})}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status Pembayaran</label>
@@ -573,6 +695,53 @@ const SalesOrder = ({ setActiveTab }) => {
                   className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
                 >
                   <Check size={18} /> {formData.id ? 'Simpan Perubahan' : 'Simpan Pesanan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-overlay">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl ring-1 ring-gray-900/5 animate-popup">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Import Data Historis</h2>
+                <p className="text-sm text-gray-500 mt-1">Upload file CSV untuk bulk import data.</p>
+              </div>
+              <button onClick={() => { setIsImportModalOpen(false); setImportFile(null); }} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleImportCSV} className="flex flex-col gap-6">
+              <div>
+                <button type="button" onClick={downloadTemplate} className="text-blue-600 hover:text-blue-700 underline text-sm mb-4 inline-block font-medium">
+                  Unduh Template CSV
+                </button>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">File CSV</label>
+                <input 
+                  type="file" 
+                  accept=".csv"
+                  required
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-gray-200 rounded-xl px-2 py-2"
+                  onChange={e => setImportFile(e.target.files[0])}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-2">
+                <button 
+                  type="button" onClick={() => { setIsImportModalOpen(false); setImportFile(null); }}
+                  className="px-5 py-2.5 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
+                >
+                  <Check size={18} /> Import
                 </button>
               </div>
             </form>
