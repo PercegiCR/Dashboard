@@ -17,6 +17,8 @@ const SalesOrder = ({ setActiveTab }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   
   const [selectedProduct, setSelectedProduct] = useState('');
+  const [productInput, setProductInput] = useState('');
+  const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [qty, setQty] = useState(1);
   const [itemNotes, setItemNotes] = useState('');
   const [sugarLevel, setSugarLevel] = useState('Normal');
@@ -30,6 +32,8 @@ const SalesOrder = ({ setActiveTab }) => {
     setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 });
     setCustomerInput('');
     setSelectedCustomerId('');
+    setProductInput('');
+    setSelectedProduct('');
     setIsModalOpen(true);
   };
 
@@ -63,6 +67,10 @@ const SalesOrder = ({ setActiveTab }) => {
 
   const customerSuggestions = customers.filter(c => 
     c.name.toLowerCase().includes(customerInput.toLowerCase())
+  );
+
+  const productSuggestions = products.filter(p => 
+    p.name.toLowerCase().includes(productInput.toLowerCase())
   );
 
   const addItem = () => {
@@ -104,6 +112,7 @@ const SalesOrder = ({ setActiveTab }) => {
       }));
       
       setSelectedProduct('');
+      setProductInput('');
       setQty(1);
       setItemNotes('');
       setSugarLevel('Normal');
@@ -523,15 +532,44 @@ const SalesOrder = ({ setActiveTab }) => {
                   
                   <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                      <div className="sm:col-span-2">
+                      <div className="sm:col-span-2 relative">
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Produk</label>
-                        <select 
+                        <input 
+                          type="text"
+                          placeholder="Ketik inisial / nama produk..."
                           className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
-                        >
-                          <option value="">Pilih Produk...</option>
-                          {products.map(p => <option key={p.id} value={p.id}>{p.name} - {formatRp(p.price)}</option>)}
-                        </select>
+                          value={productInput}
+                          onChange={(e) => {
+                            setProductInput(e.target.value);
+                            setSelectedProduct('');
+                            setShowProductSuggestions(true);
+                          }}
+                          onFocus={() => setShowProductSuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowProductSuggestions(false), 200)}
+                        />
+                        {showProductSuggestions && productInput && (
+                          <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
+                            {productSuggestions.length > 0 ? (
+                              productSuggestions.map(p => (
+                                <li 
+                                  key={p.id} 
+                                  className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800"
+                                  onClick={() => {
+                                    setProductInput(`${p.name} - ${formatRp(p.price)}`);
+                                    setSelectedProduct(p.id);
+                                    setShowProductSuggestions(false);
+                                  }}
+                                >
+                                  {p.name} - {formatRp(p.price)}
+                                </li>
+                              ))
+                            ) : (
+                              <li className="px-4 py-2 text-sm text-gray-500 italic">
+                                Produk tidak ditemukan
+                              </li>
+                            )}
+                          </ul>
+                        )}
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Ukuran</label>
