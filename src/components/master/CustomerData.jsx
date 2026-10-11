@@ -17,7 +17,14 @@ const CustomerData = () => {
 
   const handleOpenModal = (customer = null) => {
     if (customer) {
-      setFormData(customer);
+      setFormData({
+        id: customer.id,
+        name: customer.name || '',
+        phone: customer.phone || '',
+        email: customer.email || '',
+        address: customer.address || '',
+        type: customer.type || ''
+      });
     } else {
       setFormData({ id: null, name: '', phone: '', email: '', address: '', type: '' });
     }
@@ -39,7 +46,7 @@ const CustomerData = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Data Customer</h1>
-          <p className="text-gray-500 mt-1">Kelola data pelanggan (Retail/Wholesale).</p>
+          <p className="text-gray-500 mt-1">Kelola data pelanggan (Umum/Retail/Wholesale).</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
@@ -69,6 +76,7 @@ const CustomerData = () => {
               <th className="p-4 font-semibold">Nama</th>
               <th className="p-4 font-semibold">No. Telepon</th>
               <th className="p-4 font-semibold">Email</th>
+              <th className="p-4 font-semibold">Alamat</th>
               <th className="p-4 font-semibold">Tipe Pelanggan</th>
               <th className="p-4 font-semibold text-right">Aksi</th>
             </tr>
@@ -78,15 +86,22 @@ const CustomerData = () => {
               <tr key={c.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 text-gray-700">
                 <td className="p-4 font-mono text-sm text-gray-500">{c.id}</td>
                 <td className="p-4 font-medium text-gray-900">{c.name}</td>
-                <td className="p-4">{c.phone}</td>
-                <td className="p-4">{c.email}</td>
+                <td className="p-4">{c.phone || '-'}</td>
+                <td className="p-4">{c.email || '-'}</td>
+                <td className="p-4 max-w-xs truncate text-gray-600" title={c.address || ''}>{c.address || '-'}</td>
                 <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${c.type === 'Wholesale' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {c.type}
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    c.type === 'Wholesale' 
+                      ? 'bg-indigo-100 text-indigo-700' 
+                      : c.type === 'Retail'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {c.type || 'Umum'}
                   </span>
                 </td>
                 <td className="p-4 flex justify-end gap-3">
-                  <button onClick={() => handleOpenModal(c)} className="text-blue-500 hover:text-blue-700 transition-colors p-1">
+                  <button onClick={() => handleOpenModal(c)} className="text-blue-500 hover:text-blue-700 transition-colors p-1" title="Edit">
                     <Edit size={18} />
                   </button>
                   <button onClick={() => {
@@ -105,7 +120,7 @@ const CustomerData = () => {
                         Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
                       }
                     });
-                  }} className="text-red-500 hover:text-red-700 transition-colors p-1">
+                  }} className="text-red-500 hover:text-red-700 transition-colors p-1" title="Hapus">
                     <Trash2 size={18} />
                   </button>
                 </td>
@@ -113,7 +128,7 @@ const CustomerData = () => {
             ))}
             {filteredcustomers.length === 0 && (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-gray-500">Belum ada data customer.</td>
+                <td colSpan="7" className="p-8 text-center text-gray-500">Belum ada data customer.</td>
               </tr>
             )}
           </tbody>
@@ -177,6 +192,7 @@ const CustomerData = () => {
                   value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}
                 >
                   <option value="">Pilih Tipe...</option>
+                  <option value="Umum">Umum</option>
                   <option value="Retail">Retail (Eceran)</option>
                   <option value="Wholesale">Wholesale (Grosir)</option>
                 </select>
