@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { formatRp, getProductSizes, getSizePrice, getProductPriceDisplay } from '../../utils/productUtils';
 
 const SalesOrder = ({ setActiveTab }) => {
   const { salesOrders, customers, products, categories, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer, importHistoricalSalesOrders } = useAppContext();
@@ -136,13 +137,7 @@ const SalesOrder = ({ setActiveTab }) => {
 
   const currentProductSizes = useMemo(() => {
     if (!currentProduct) return [];
-    if (Array.isArray(currentProduct.sizes) && currentProduct.sizes.length > 0) {
-      return currentProduct.sizes;
-    }
-    if (currentProduct.size) {
-      return String(currentProduct.size).split(',').map(s => s.trim()).filter(Boolean);
-    }
-    return [];
+    return getProductSizes(currentProduct);
   }, [currentProduct]);
 
   const addItem = () => {
@@ -161,11 +156,9 @@ const SalesOrder = ({ setActiveTab }) => {
         return;
       }
 
-      const prodSizes = (Array.isArray(product.sizes) && product.sizes.length > 0)
-        ? product.sizes
-        : (product.size ? String(product.size).split(',').map(s=>s.trim()).filter(Boolean) : []);
-      
-      const chosenSize = size || (prodSizes.length > 0 ? prodSizes[0] : '-');
+      const prodSizes = getProductSizes(product);
+      const chosenSize = size || (prodSizes.length > 0 ? prodSizes[0].size : '-');
+      const baseItemPrice = getSizePrice(product, chosenSize);
 
       const isTempEnabled = activeCategoryConfig ? activeCategoryConfig.showTemperature : true;
       const isSugarEnabled = activeCategoryConfig ? activeCategoryConfig.showSugar : true;
@@ -173,13 +166,13 @@ const SalesOrder = ({ setActiveTab }) => {
 
       const finalShotCount = isExtraShotEnabled ? Number(shotCount) : 0;
       const additionalCost = finalShotCount > 0 ? Number(extraShotCost) : 0;
-      const finalPrice = (Number(product.price) || 0) + additionalCost;
+      const finalPrice = baseItemPrice + additionalCost;
 
       const newItem = {
         productId: product.id,
         name: product.name,
         category: product.category,
-        price: Number(product.price) || 0,
+        price: baseItemPrice,
         qty: Number(qty),
         sugarLevel: isSugarEnabled ? sugarLevel : '',
         shotCount: finalShotCount,
@@ -290,10 +283,6 @@ const SalesOrder = ({ setActiveTab }) => {
         Swal.fire('Terhapus!', 'Sales Order berhasil dihapus.', 'success');
       }
     });
-  };
-
-  const formatRp = (angka) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
   };
 
   const getCustomerName = (id) => {
@@ -662,37 +651,38 @@ const SalesOrder = ({ setActiveTab }) => {
                           onBlur={() => setTimeout(() => setShowProductSuggestions(false), 200)}
                         />
                         {showProductSuggestions && selectedCategory && (
-                          <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
+                          <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-56 overflow-y-auto">
                             {productSuggestions.length > 0 ? (
                               productSuggestions.map(p => {
-                                const prodSizes = (Array.isArray(p.sizes) && p.sizes.length > 0)
-                                  ? p.sizes
-                                  : (p.size ? String(p.size).split(',').map(s => s.trim()).filter(Boolean) : []);
+                                const prodSizes = getProductSizes(p);
+                                const priceLabel = getProductPriceDisplay(p);
 
                                 return (
                                   <li 
                                     key={p.id} 
-                                    className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800 flex justify-between items-center"
+                                    className="px-4 py-2.5 hover:bg-amber-50 cursor-pointer text-sm text-gray-800 flex justify-between items-center transition-colors"
                                     onClick={() => {
-                                      setProductInput(`${p.name} - ${formatRp(p.price)}`);
                                       setSelectedProduct(p.id);
                                       if (prodSizes.length > 0) {
-                                        setSize(prodSizes[0]);
+                                        const defaultSize = prodSizes[0].size;
+                                        setSize(defaultSize);
+                                        setProductInput(`${p.name} (${defaultSize}) - ${formatRp(prodSizes[0].price)}`);
                                       } else {
                                         setSize('-');
+                                        setProductInput(`${p.name} - ${formatRp(p.price)}`);
                                       }
                                       setShowProductSuggestions(false);
                                     }}
                                   >
                                     <div>
-                                      <span className="font-medium">{p.name}</span>
+                                      <span className="font-semibold">{p.name}</span>
                                       {prodSizes.length > 0 && (
                                         <span className="ml-2 text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded font-medium border border-stone-200">
-                                          {prodSizes.join(', ')}
+                                          {prodSizes.map(s => s.size).join(', ')}
                                         </span>
                                       )}
                                     </div>
-                                    <span className="text-emerald-600 font-semibold">{formatRp(p.price)}</span>
+                                    <span className="text-emerald-600 font-bold">{priceLabel}</span>
                                   </li>
                                 );
                               })
@@ -707,7 +697,14 @@ const SalesOrder = ({ setActiveTab }) => {
 
                       {/* Ukuran */}
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Ukuran</label>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Ukuran</label>
+                          {currentProduct && size && size !== '-' && (
+                            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                              {formatRp(getSizePrice(currentProduct, size))}
+                            </span>
+                          )}
+                        </div>
                         {!selectedProduct ? (
                           <select
                             disabled
@@ -720,10 +717,18 @@ const SalesOrder = ({ setActiveTab }) => {
                             <select
                               className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
                               value={size}
-                              onChange={e => setSize(e.target.value)}
+                              onChange={e => {
+                                const newSize = e.target.value;
+                                setSize(newSize);
+                                if (currentProduct) {
+                                  setProductInput(`${currentProduct.name} (${newSize}) - ${formatRp(getSizePrice(currentProduct, newSize))}`);
+                                }
+                              }}
                             >
                               {currentProductSizes.map((s, idx) => (
-                                <option key={idx} value={s}>{s}</option>
+                                <option key={idx} value={s.size}>
+                                  {s.size} ({formatRp(s.price)})
+                                </option>
                               ))}
                             </select>
                             {currentProductSizes.length > 1 && (
@@ -732,14 +737,19 @@ const SalesOrder = ({ setActiveTab }) => {
                                   <button
                                     key={idx}
                                     type="button"
-                                    onClick={() => setSize(s)}
+                                    onClick={() => {
+                                      setSize(s.size);
+                                      if (currentProduct) {
+                                        setProductInput(`${currentProduct.name} (${s.size}) - ${formatRp(s.price)}`);
+                                      }
+                                    }}
                                     className={`text-[11px] px-2 py-0.5 rounded-md border transition-all ${
-                                      size === s
+                                      size === s.size
                                         ? 'bg-amber-600 text-white border-amber-600 font-bold shadow-2xs'
                                         : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                                     }`}
                                   >
-                                    {s}
+                                    {s.size} ({formatRp(s.price)})
                                   </button>
                                 ))}
                               </div>

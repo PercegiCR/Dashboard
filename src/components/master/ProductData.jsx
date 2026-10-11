@@ -2,12 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, Edit, Trash2, X, PackagePlus, Search } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { formatRp, getProductSizes, getProductPriceDisplay, getSizePrice } from '../../utils/productUtils';
 
 const ProductData = () => {
   const { products, inventory, categories, addProduct, updateProduct, deleteProduct, produceProduct } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ id: null, code: '', name: '', category: '', sizes: [], price: 0, recipe: [] });
   const [sizeInput, setSizeInput] = useState('');
+  const [sizePriceInput, setSizePriceInput] = useState('');
   const [selectedInv, setSelectedInv] = useState('');
   const [invQty, setInvQty] = useState('');
   const [invUnit, setInvUnit] = useState('gram');
@@ -32,7 +34,10 @@ const ProductData = () => {
     const inValues = Object.values(item).some(val => 
       typeof val === 'string' && val.toLowerCase().includes(term)
     );
-    const inSizes = Array.isArray(item.sizes) && item.sizes.some(s => s.toLowerCase().includes(term));
+    const itemSizes = getProductSizes(item);
+    const inSizes = itemSizes.some(s => 
+      s.size.toLowerCase().includes(term) || String(s.price).includes(term)
+    );
     return inValues || inSizes;
   });
 
@@ -58,13 +63,13 @@ const ProductData = () => {
 
   const handleOpenModal = (item = null) => {
     setSizeInput('');
+    setSizePriceInput('');
     if (item) {
-      const itemSizes = Array.isArray(item.sizes) && item.sizes.length > 0
-        ? item.sizes
-        : (item.size ? String(item.size).split(',').map(s => s.trim()).filter(Boolean) : []);
+      const itemSizes = getProductSizes(item);
       setFormData({ 
         ...item, 
         sizes: itemSizes, 
+        price: Number(item.price) || 0,
         recipe: item.recipe || [] 
       });
     } else {
@@ -81,27 +86,64 @@ const ProductData = () => {
     setIsModalOpen(true);
   };
 
-  const handleAddSize = (valueToAdd = null) => {
-    const val = (typeof valueToAdd === 'string' ? valueToAdd : sizeInput || '').trim();
-    if (!val) return;
+  const handleAddSize = (valueToAdd = null, priceToAdd = null) => {
+    const rawVal = (typeof valueToAdd === 'string' ? valueToAdd : sizeInput || '').trim();
+    if (!rawVal) return;
     
-    const splitValues = val.split(',').map(s => s.trim()).filter(Boolean);
-    const currentSizes = formData.sizes || [];
-    const toAdd = splitValues.filter(s => !currentSizes.includes(s));
+    // Support comma separated e.g. "200g, 500g"
+    const splitValues = rawVal.split(',').map(s => s.trim()).filter(Boolean);
+    const currentSizes = [...(formData.sizes || [])];
     
-    if (toAdd.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        sizes: [...(prev.sizes || []), ...toAdd]
-      }));
+    // Determine price to apply
+    let assignedPrice = Number(formData.price) || 0;
+    if (priceToAdd !== null && priceToAdd !== undefined && priceToAdd !== '') {
+      assignedPrice = Number(priceToAdd) || 0;
+    } else if (sizePriceInput !== '' && !isNaN(Number(sizePriceInput))) {
+      assignedPrice = Number(sizePriceInput);
     }
+
+    splitValues.forEach(name => {
+      const existingIdx = currentSizes.findIndex(s => s.size.toLowerCase() === name.toLowerCase());
+      if (existingIdx >= 0) {
+        currentSizes[existingIdx] = { size: name, price: assignedPrice };
+      } else {
+        currentSizes.push({ size: name, price: assignedPrice });
+      }
+    });
+
+    setFormData(prev => ({
+      ...prev,
+      sizes: currentSizes,
+      price: Number(prev.price) > 0 ? prev.price : assignedPrice
+    }));
+
     setSizeInput('');
+    setSizePriceInput('');
+  };
+
+  const handleUpdateSizePrice = (index, newPrice) => {
+    setFormData(prev => {
+      const nextSizes = [...(prev.sizes || [])];
+      if (nextSizes[index]) {
+        nextSizes[index] = {
+          ...nextSizes[index],
+          price: Number(newPrice) >= 0 ? Number(newPrice) : 0
+        };
+      }
+      return {
+        ...prev,
+        sizes: nextSizes
+      };
+    });
   };
 
   const handleRemoveSize = (sizeToRemove) => {
     setFormData(prev => ({
       ...prev,
-      sizes: (prev.sizes || []).filter(s => s !== sizeToRemove)
+      sizes: (prev.sizes || []).filter(s => {
+        const sName = typeof s === 'object' ? s.size : s;
+        return sName.toLowerCase() !== String(sizeToRemove).toLowerCase();
+      })
     }));
   };
 
@@ -127,18 +169,29 @@ const ProductData = () => {
 
   const handleSave = (e) => {
     e.preventDefault();
-    const currentSizes = formData.sizes || [];
+    const currentSizes = (formData.sizes || []).map(s => ({
+      size: String(s.size || s).trim(),
+      price: Number(s.price) >= 0 ? Number(s.price) : (Number(formData.price) || 0)
+    })).filter(s => Boolean(s.size));
+
+    // Base price calculation: if sizes exist, keep base price or take from first size
+    const effectiveBasePrice = currentSizes.length > 0
+      ? (Number(formData.price) > 0 ? Number(formData.price) : currentSizes[0].price)
+      : Number(formData.price) || 0;
+
     const dataToSave = {
       ...formData,
       sizes: currentSizes,
-      size: currentSizes.join(', '),
-      price: Number(formData.price)
+      size: currentSizes.map(s => `${s.size} (${formatRp(s.price)})`).join(', '),
+      price: Number(effectiveBasePrice)
     };
     
     if (formData.id) {
       updateProduct(formData.id, dataToSave);
+      Swal.fire('Berhasil!', 'Data produk berhasil diperbarui.', 'success');
     } else {
       addProduct(dataToSave);
+      Swal.fire('Berhasil!', 'Produk baru berhasil ditambahkan.', 'success');
     }
     setIsModalOpen(false);
   };
@@ -157,10 +210,6 @@ const ProductData = () => {
     } else {
       Swal.fire('Gagal!', res.message, 'error');
     }
-  };
-
-  const formatRp = (angka) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
   };
 
   return (
@@ -197,7 +246,7 @@ const ProductData = () => {
               <th className="p-4 font-semibold">Kode</th>
               <th className="p-4 font-semibold">Nama Menu</th>
               <th className="p-4 font-semibold">Kategori</th>
-              <th className="p-4 font-semibold">Ukuran</th>
+              <th className="p-4 font-semibold">Ukuran & Harga</th>
               <th className="p-4 font-semibold text-right">Harga Jual</th>
               <th className="p-4 font-semibold text-right">Stok</th>
               <th className="p-4 font-semibold text-right">Aksi</th>
@@ -205,9 +254,7 @@ const ProductData = () => {
           </thead>
           <tbody>
             {filteredproducts.map(item => {
-              const itemSizes = Array.isArray(item.sizes) && item.sizes.length > 0
-                ? item.sizes
-                : (item.size ? String(item.size).split(',').map(s => s.trim()).filter(Boolean) : []);
+              const itemSizes = getProductSizes(item);
 
               return (
                 <tr key={item.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 text-gray-700">
@@ -220,10 +267,11 @@ const ProductData = () => {
                   </td>
                   <td className="p-4 text-sm">
                     {itemSizes.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 max-w-[220px]">
+                      <div className="flex flex-wrap gap-1.5 max-w-[320px]">
                         {itemSizes.map((s, idx) => (
-                          <span key={idx} className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-xs font-semibold border border-stone-200">
-                            {s}
+                          <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-50 text-stone-800 text-xs font-semibold border border-stone-200 shadow-2xs">
+                            <span>{s.size}</span>
+                            <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 text-[11px]">{formatRp(s.price)}</span>
                           </span>
                         ))}
                       </div>
@@ -231,7 +279,16 @@ const ProductData = () => {
                       <span className="text-gray-400 text-xs italic">-</span>
                     )}
                   </td>
-                  <td className="p-4 text-right font-bold text-emerald-600">{formatRp(item.price)}</td>
+                  <td className="p-4 text-right">
+                    {itemSizes.length > 1 ? (
+                      <div>
+                        <div className="font-bold text-emerald-600 text-sm">{getProductPriceDisplay(item)}</div>
+                        <div className="text-[11px] text-gray-400 font-medium">{itemSizes.length} variasi harga</div>
+                      </div>
+                    ) : (
+                      <span className="font-bold text-emerald-600">{formatRp(item.price)}</span>
+                    )}
+                  </td>
                   <td className="p-4 text-right font-bold text-blue-600">{item.stock || 0}</td>
                   <td className="p-4 flex justify-end gap-3">
                     <button onClick={() => handleOpenProduce(item)} title="Produksi" className="text-emerald-500 hover:text-emerald-700 transition-colors p-1">
@@ -321,69 +378,101 @@ const ProductData = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Jual</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Jual Dasar</label>
                   <input 
                     type="number" required min="0"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
+                    placeholder="Harga dasar (acuan)..."
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 font-semibold"
                     value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}
                   />
+                  <span className="text-[11px] text-gray-400 mt-1 block">Harga acuan/default bila tidak ada ukuran khusus</span>
                 </div>
               </div>
 
-              {/* Ukuran Produk (Multi-size) */}
+              {/* Ukuran Produk & Harga Per Ukuran (Multi-size with custom prices) */}
               <div className="border border-gray-200 p-4 rounded-2xl bg-gray-50/50 shadow-sm">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-bold text-gray-800">
-                    Ukuran Produk <span className="text-xs font-normal text-gray-500">(Bisa lebih dari 1)</span>
-                  </label>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-800">
+                      Ukuran Produk & Harga Jual
+                    </label>
+                    <p className="text-xs text-gray-500">Tiap ukuran dapat memiliki harga jual yang berbeda</p>
+                  </div>
                   {(formData.sizes || []).length > 0 && (
-                    <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
                       {(formData.sizes || []).length} ukuran
                     </span>
                   )}
                 </div>
 
-                <div className="flex gap-2 mb-2.5">
-                  <input 
-                    type="text" 
-                    list="ukuran-options" 
-                    placeholder="Ketik ukuran atau pilih rekomendasi..."
-                    className="flex-1 bg-white border border-gray-200 rounded-xl px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                    value={sizeInput} 
-                    onChange={e => setSizeInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddSize();
-                      }
-                    }}
-                  />
-                  <datalist id="ukuran-options">
-                    <option value="150 ml" />
-                    <option value="200 gram" />
-                    <option value="250 gram" />
-                    <option value="300 ml" />
-                    <option value="500 gram" />
-                    <option value="600 ml" />
-                    <option value="1 kg" />
-                    <option value="1 Liter" />
-                    <option value="Regular" />
-                    <option value="Large" />
-                  </datalist>
-                  <button 
-                    type="button" 
-                    onClick={() => handleAddSize()}
-                    className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center gap-1 hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <Plus size={16} /> Tambah
-                  </button>
+                {/* Input Tambah Ukuran & Harga */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 mb-2.5 items-center">
+                  <div className="sm:col-span-6 relative">
+                    <input 
+                      type="text" 
+                      list="ukuran-options" 
+                      placeholder="Nama ukuran (mis: 200 gram, Large)..."
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                      value={sizeInput} 
+                      onChange={e => setSizeInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSize();
+                        }
+                      }}
+                    />
+                    <datalist id="ukuran-options">
+                      <option value="150 ml" />
+                      <option value="200 gram" />
+                      <option value="250 gram" />
+                      <option value="300 ml" />
+                      <option value="500 gram" />
+                      <option value="600 ml" />
+                      <option value="1 kg" />
+                      <option value="1 Liter" />
+                      <option value="Regular" />
+                      <option value="Large" />
+                    </datalist>
+                  </div>
+                  <div className="sm:col-span-4 relative">
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-gray-400">Rp</span>
+                      <input 
+                        type="number" 
+                        min="0"
+                        placeholder={`Harga (default: ${formData.price || 0})`}
+                        className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-semibold"
+                        value={sizePriceInput}
+                        onChange={e => setSizePriceInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddSize();
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <button 
+                      type="button" 
+                      onClick={() => handleAddSize()}
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-1 hover:scale-[1.02] active:scale-[0.98] h-[38px]"
+                    >
+                      <Plus size={16} /> Tambah
+                    </button>
+                  </div>
                 </div>
 
                 {/* Quick Recommendation Pills */}
-                <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                <div className="flex flex-wrap items-center gap-1.5 mb-3">
                   <span className="text-xs text-gray-400 mr-1">Rekomendasi:</span>
-                  {['150 ml', '250 gram', '500 gram', '600 ml', '1 kg', '1 Liter'].map(opt => {
-                    const isSelected = (formData.sizes || []).includes(opt);
+                  {['150 ml', '200 gram', '250 gram', '500 gram', '1 kg', '1 Liter', 'Regular', 'Large'].map(opt => {
+                    const isSelected = (formData.sizes || []).some(s => {
+                      const sName = typeof s === 'object' ? s.size : s;
+                      return sName.toLowerCase() === opt.toLowerCase();
+                    });
                     return (
                       <button
                         key={opt}
@@ -392,12 +481,12 @@ const ProductData = () => {
                           if (isSelected) {
                             handleRemoveSize(opt);
                           } else {
-                            handleAddSize(opt);
+                            handleAddSize(opt, sizePriceInput !== '' ? sizePriceInput : formData.price);
                           }
                         }}
                         className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
                           isSelected 
-                            ? 'bg-amber-600 text-white border-amber-600 font-medium' 
+                            ? 'bg-amber-600 text-white border-amber-600 font-medium shadow-2xs' 
                             : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900'
                         }`}
                       >
@@ -407,27 +496,49 @@ const ProductData = () => {
                   })}
                 </div>
 
-                {/* Selected Sizes Badges */}
-                <div className="min-h-[42px] p-2 bg-white rounded-xl border border-gray-200 flex flex-wrap items-center gap-2">
+                {/* List of Added Sizes with Editable Prices */}
+                <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden shadow-2xs">
                   {(formData.sizes || []).length > 0 ? (
-                    (formData.sizes || []).map((s, idx) => (
-                      <span 
-                        key={idx} 
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-lg text-xs font-semibold shadow-2xs"
-                      >
-                        {s}
-                        <button 
-                          type="button" 
-                          onClick={() => handleRemoveSize(s)}
-                          className="text-amber-500 hover:text-red-500 hover:bg-amber-100 p-0.5 rounded-full transition-colors"
-                          title="Hapus ukuran"
-                        >
-                          <X size={13} />
-                        </button>
-                      </span>
-                    ))
+                    (formData.sizes || []).map((s, idx) => {
+                      const sizeName = typeof s === 'object' ? s.size : s;
+                      const sizePrice = typeof s === 'object' ? s.price : (Number(formData.price) || 0);
+
+                      return (
+                        <div key={idx} className="flex items-center justify-between p-2.5 hover:bg-amber-50/40 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center justify-center">
+                              {idx + 1}
+                            </span>
+                            <span className="font-bold text-sm text-gray-800">{sizeName}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-white transition-all">
+                              <span className="text-xs font-bold text-gray-400 mr-1.5">Rp</span>
+                              <input 
+                                type="number"
+                                min="0"
+                                value={sizePrice}
+                                onChange={(e) => handleUpdateSizePrice(idx, e.target.value)}
+                                className="w-28 text-sm font-bold text-emerald-600 bg-transparent focus:outline-none text-right"
+                                placeholder="0"
+                              />
+                            </div>
+                            <button 
+                              type="button" 
+                              onClick={() => handleRemoveSize(sizeName)}
+                              className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                              title="Hapus ukuran"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
                   ) : (
-                    <span className="text-xs text-gray-400 italic px-1">Belum ada ukuran ditambahkan (opsional, bisa lebih dari 1).</span>
+                    <div className="p-4 text-center text-xs text-gray-400 italic">
+                      Belum ada ukuran khusus ditambahkan. Produk akan menggunakan harga jual dasar di atas.
+                    </div>
                   )}
                 </div>
               </div>
