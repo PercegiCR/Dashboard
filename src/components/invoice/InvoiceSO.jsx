@@ -118,53 +118,9 @@ const InvoiceSO = ({ setActiveTab }) => {
           </tbody>
         </table>
 
-        <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
-          {/* Payment Details */}
-          <div className="w-full md:max-w-md bg-slate-50 border border-slate-200/80 rounded-xl p-4.5 print:bg-white print:border-slate-300">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Informasi Pembayaran / Transfer</h4>
-            </div>
-
-            {settings?.bankAccountNumber ? (
-              <div className="space-y-3">
-                <div className="bg-white p-3.5 rounded-lg border border-slate-200/80 shadow-xs print:border-slate-300">
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Nama Bank</span>
-                    <span className="text-sm font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{settings.bankName || 'BCA'}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span className="text-xs font-semibold text-slate-500 uppercase">No. Rekening</span>
-                    <span className="text-base font-black tracking-wider text-amber-700 font-mono">{settings.bankAccountNumber}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Atas Nama</span>
-                    <span className="text-sm font-bold text-slate-800">{settings.bankAccountName || settings.shopName || '-'}</span>
-                  </div>
-                </div>
-
-                <div className="text-xs text-slate-600 leading-relaxed bg-amber-50/70 p-3 rounded-lg border border-amber-200/70">
-                  <p className="font-medium text-amber-950 mb-1">
-                    {settings.paymentNotes || 'Pembayaran dapat ditransfer melalui rekening di atas.'}
-                  </p>
-                  <div className="text-slate-600 space-y-0.5 text-[11px] pt-1.5 border-t border-amber-200/50">
-                    <p>• Cantumkan berita transfer: <span className="font-semibold text-slate-800 font-mono">{so.soNumber}</span></p>
-                    <p>• Konfirmasi bukti transfer ke WA: <span className="font-semibold text-slate-800">{settings.shopPhone || 'kontak kami'}</span></p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-xs text-slate-600 bg-white p-3.5 rounded-lg border border-slate-200">
-                <p className="font-semibold text-slate-700 mb-1">Transfer Bank:</p>
-                <p className="text-slate-500">
-                  Silakan hubungi kasir/admin di {settings?.shopPhone || 'kontak toko'} untuk nomor rekening tujuan pembayaran atau atur di menu Pengaturan Invoice.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Subtotal & Totals */}
-          <div className="w-full md:w-72">
+        {/* Subtotal & Totals */}
+        <div className="flex justify-end mb-8">
+          <div className="w-full sm:w-80">
             <div className="flex justify-between py-2 border-b border-slate-200">
               <span className="text-slate-600 font-medium">Subtotal</span>
               <span className="font-bold text-slate-800">{formatRp(so.subtotal || so.total)}</span>
@@ -179,11 +135,57 @@ const InvoiceSO = ({ setActiveTab }) => {
                 <span className="font-bold text-slate-800">{formatRp(so.shippingCost)}</span>
               </div>
             )}
-            <div className="flex justify-between py-3 mt-3 bg-amber-50 px-3.5 rounded-xl border border-amber-200">
+            <div className="flex justify-between py-3 mt-3 bg-amber-50 px-4 rounded-xl border border-amber-200">
               <span className="font-black text-amber-900 uppercase">Total Akhir</span>
               <span className="font-black text-amber-700 text-xl">{formatRp(so.total)}</span>
             </div>
           </div>
+        </div>
+
+        {/* Informasi Pembayaran / Transfer (Di Bawah Total Akhir) */}
+        <div className="mb-10 bg-slate-50 border border-slate-200/90 rounded-2xl p-5 print:bg-white print:border-slate-300">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Informasi Pembayaran / Transfer</h4>
+          </div>
+
+          {settings?.bankAccountNumber ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+              {/* Box Rincian Rekening */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs print:border-slate-300 flex flex-col justify-center">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Nama Bank</span>
+                  <span className="text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">{settings.bankName || 'BCA'}</span>
+                </div>
+                <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">No. Rekening</span>
+                  <span className="text-base font-black tracking-wider text-amber-700 font-mono">{settings.bankAccountNumber}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Atas Nama</span>
+                  <span className="text-sm font-bold text-slate-800">{settings.bankAccountName || settings.shopName || '-'}</span>
+                </div>
+              </div>
+
+              {/* Box Kalimat Petunjuk & Instruksi */}
+              <div className="text-xs text-slate-700 leading-relaxed bg-amber-50/70 p-4 rounded-xl border border-amber-200/80 flex flex-col justify-between">
+                <p className="font-semibold text-amber-950 mb-2">
+                  {settings.paymentNotes || 'Pembayaran dapat ditransfer melalui rekening resmi di atas.'}
+                </p>
+                <div className="text-slate-600 space-y-1 text-xs pt-2 border-t border-amber-200/60">
+                  <p>• Cantumkan no. invoice: <span className="font-bold text-slate-900 font-mono">{so.soNumber}</span> pada berita transfer</p>
+                  <p>• Konfirmasi bukti transfer ke WA: <span className="font-bold text-slate-900">{settings.shopPhone || 'kontak toko'}</span></p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-slate-600 bg-white p-4 rounded-xl border border-slate-200">
+              <p className="font-semibold text-slate-700 mb-1">Transfer Bank:</p>
+              <p className="text-slate-500">
+                Silakan hubungi kasir/admin di {settings?.shopPhone || 'kontak toko'} untuk nomor rekening tujuan pembayaran atau atur di menu Pengaturan Invoice.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="text-center text-slate-400 text-sm border-t border-slate-200 pt-8">
