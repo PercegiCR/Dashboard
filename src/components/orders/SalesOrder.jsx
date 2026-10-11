@@ -550,25 +550,35 @@ const SalesOrder = ({ setActiveTab }) => {
                         {showProductSuggestions && productInput && (
                           <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
                             {productSuggestions.length > 0 ? (
-                              productSuggestions.map(p => (
-                                <li 
-                                  key={p.id} 
-                                  className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800 flex justify-between items-center"
-                                  onClick={() => {
-                                    setProductInput(`${p.name}${p.size ? ` (${p.size})` : ''} - ${formatRp(p.price)}`);
-                                    setSelectedProduct(p.id);
-                                    if (p.size) setSize(p.size);
-                                    setShowProductSuggestions(false);
-                                  }}
-                                >
-                                  <div>
-                                    <span className="font-medium">{p.name}</span>
-                                    {p.size && <span className="ml-2 text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded font-medium border border-stone-200">{p.size}</span>}
-                                    {p.category && <span className="ml-1 text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{p.category}</span>}
-                                  </div>
-                                  <span className="text-emerald-600 font-semibold">{formatRp(p.price)}</span>
-                                </li>
-                              ))
+                              productSuggestions.map(p => {
+                                const prodSizes = (Array.isArray(p.sizes) && p.sizes.length > 0)
+                                  ? p.sizes
+                                  : (p.size ? String(p.size).split(',').map(s => s.trim()).filter(Boolean) : []);
+
+                                return (
+                                  <li 
+                                    key={p.id} 
+                                    className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800 flex justify-between items-center"
+                                    onClick={() => {
+                                      setProductInput(`${p.name}${prodSizes.length > 0 ? ` (${prodSizes.join(', ')})` : ''} - ${formatRp(p.price)}`);
+                                      setSelectedProduct(p.id);
+                                      if (prodSizes.length > 0) setSize(prodSizes[0]);
+                                      setShowProductSuggestions(false);
+                                    }}
+                                  >
+                                    <div>
+                                      <span className="font-medium">{p.name}</span>
+                                      {prodSizes.length > 0 && (
+                                        <span className="ml-2 text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded font-medium border border-stone-200">
+                                          {prodSizes.join(', ')}
+                                        </span>
+                                      )}
+                                      {p.category && <span className="ml-1 text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{p.category}</span>}
+                                    </div>
+                                    <span className="text-emerald-600 font-semibold">{formatRp(p.price)}</span>
+                                  </li>
+                                );
+                              })
                             ) : (
                               <li className="px-4 py-2 text-sm text-gray-500 italic">
                                 Produk tidak ditemukan
@@ -588,6 +598,13 @@ const SalesOrder = ({ setActiveTab }) => {
                           onChange={e => setSize(e.target.value)}
                         />
                         <datalist id="so-size-options">
+                          {(() => {
+                            const currentProd = products.find(p => String(p.id) === String(selectedProduct));
+                            const prodSizes = currentProd ? (Array.isArray(currentProd.sizes) && currentProd.sizes.length > 0 ? currentProd.sizes : (currentProd.size ? String(currentProd.size).split(',').map(s=>s.trim()).filter(Boolean) : [])) : [];
+                            return prodSizes.map((s, idx) => (
+                              <option key={`prod-${idx}`} value={s} />
+                            ));
+                          })()}
                           <option value="150 ml" />
                           <option value="200 gram" />
                           <option value="250 gram" />
@@ -599,6 +616,31 @@ const SalesOrder = ({ setActiveTab }) => {
                           <option value="Regular" />
                           <option value="Large" />
                         </datalist>
+                        {(() => {
+                          const currentProd = products.find(p => String(p.id) === String(selectedProduct));
+                          const prodSizes = currentProd ? (Array.isArray(currentProd.sizes) && currentProd.sizes.length > 0 ? currentProd.sizes : (currentProd.size ? String(currentProd.size).split(',').map(s=>s.trim()).filter(Boolean) : [])) : [];
+                          if (prodSizes.length > 1) {
+                            return (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {prodSizes.map((s, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setSize(s)}
+                                    className={`text-[11px] px-2 py-0.5 rounded-md border transition-all ${
+                                      size === s
+                                        ? 'bg-amber-600 text-white border-amber-600 font-bold shadow-2xs'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {s}
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Qty</label>
