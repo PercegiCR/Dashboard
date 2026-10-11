@@ -69,9 +69,13 @@ export const AppProvider = ({ children }) => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [categories, setCategories] = useState([]);
   const [settings, setSettings] = useState({
-    shopName: 'Percegi Coffee',
-    shopAddress: 'Jl. Kopi Nusantara No. 1, Jakarta',
-    shopPhone: '0812-3456-7890'
+    shopName: 'Percegi Coffee Roastery',
+    shopAddress: 'Jl. Otista Raya Cawang 1',
+    shopPhone: '0813-4037-2830',
+    bankName: 'BCA',
+    bankAccountNumber: '',
+    bankAccountName: 'Percegi Coffee Roastery',
+    paymentNotes: 'Pembayaran dapat ditransfer melalui rekening resmi berikut:'
   });
 
   useEffect(() => {
@@ -98,7 +102,7 @@ export const AppProvider = ({ children }) => {
     });
     const unsubSettings = onSnapshot(doc(db, 'settings', 'global'), docSnap => {
       if (docSnap.exists()) {
-        setSettings(docSnap.data());
+        setSettings(prev => ({ ...prev, ...docSnap.data() }));
       }
     });
 
