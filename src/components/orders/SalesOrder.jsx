@@ -10,7 +10,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [formData, setFormData] = useState({ 
-    id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0 
+    id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0, isFreeShipping: false 
   });
   
   const [customerInput, setCustomerInput] = useState('');
@@ -31,7 +31,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [temperature, setTemperature] = useState('Normal');
 
   const handleOpenModal = () => {
-    setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0 });
+    setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0, isFreeShipping: false });
     setCustomerInput('');
     setSelectedCustomerId('');
     setSelectedCategory('');
@@ -48,6 +48,7 @@ const SalesOrder = ({ setActiveTab }) => {
   }, []);
 
   const handleEditModal = (so) => {
+    const hasFree = Boolean(so.isFreeShipping || (!Number(so.shippingCost) && so.items?.some(it => it.notes && /\b(free\s*ongkir|gratis\s*ongkir)\b/i.test(it.notes))));
     setFormData({
       id: so.id,
       customerId: so.customerId,
@@ -56,7 +57,8 @@ const SalesOrder = ({ setActiveTab }) => {
       items: [...so.items],
       taxType: so.taxType || 'Non Pajak',
       taxRate: so.taxRate || 0,
-      shippingCost: Number(so.shippingCost) || 0
+      shippingCost: Number(so.shippingCost) || 0,
+      isFreeShipping: hasFree
     });
     const c = customers.find(cust => cust.id === so.customerId);
     setCustomerInput(c ? c.name : '');
@@ -253,7 +255,8 @@ const SalesOrder = ({ setActiveTab }) => {
       taxType: formData.taxType,
       taxRate: formData.taxRate,
       taxAmount: getTaxAmount(),
-      shippingCost: getShippingCost(),
+      shippingCost: formData.isFreeShipping ? 0 : getShippingCost(),
+      isFreeShipping: formData.isFreeShipping || false,
       total: getTotal(),
       status: formData.status
     };
@@ -464,7 +467,12 @@ const SalesOrder = ({ setActiveTab }) => {
                             {item.temperature && item.temperature !== 'Normal' && <span>• {item.temperature}</span>}
                             {item.sugarLevel && item.sugarLevel !== 'Normal' && <span>• {item.sugarLevel}</span>}
                             {item.shotCount > 0 && <span>• Extra Shot</span>}
-                            {item.notes && <span className="italic text-gray-400">({item.notes})</span>}
+                            {(() => {
+                              const displayNotes = item.notes 
+                                ? item.notes.replace(/\(?\b(free\s*ongkir|gratis\s*ongkir)\b\)?/gi, '').replace(/^\s*[,•-]\s*|\s*[,•-]\s*$/g, '').trim()
+                                : '';
+                              return displayNotes ? <span className="italic text-gray-400">({displayNotes})</span> : null;
+                            })()}
                           </div>
                         )}
                       </div>
@@ -473,11 +481,15 @@ const SalesOrder = ({ setActiveTab }) => {
                 </td>
                 <td className="p-4 text-right">
                   <div className="font-bold text-emerald-600">{formatRp(so.total)}</div>
-                  {Number(so.shippingCost) > 0 && (
+                  {Number(so.shippingCost) > 0 ? (
                     <div className="text-[11px] text-gray-400 font-normal mt-0.5">
                       + Ongkir {formatRp(so.shippingCost)}
                     </div>
-                  )}
+                  ) : (so.isFreeShipping || so.items?.some(it => it.notes && /\b(free\s*ongkir|gratis\s*ongkir)\b/i.test(it.notes))) ? (
+                    <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+                      + Free Ongkir
+                    </div>
+                  ) : null}
                 </td>
                 <td className="p-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${so.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
@@ -606,15 +618,36 @@ const SalesOrder = ({ setActiveTab }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Ongkir</label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-sm font-semibold text-gray-700">Harga Ongkir</label>
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 cursor-pointer select-none bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                      <input 
+                        type="checkbox"
+                        checked={formData.isFreeShipping || false}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          setFormData({
+                            ...formData,
+                            isFreeShipping: checked,
+                            shippingCost: checked ? 0 : formData.shippingCost
+                          });
+                        }}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span>Free Ongkir</span>
+                    </label>
+                  </div>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-gray-400">Rp</span>
                     <input 
                       type="number"
                       min="0"
-                      placeholder="0"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-3.5 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 font-semibold text-sm"
-                      value={formData.shippingCost === 0 ? '' : formData.shippingCost}
+                      disabled={formData.isFreeShipping}
+                      placeholder={formData.isFreeShipping ? "0 (Gratis Ongkir)" : "0"}
+                      className={`w-full border rounded-xl pl-10 pr-3.5 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 font-semibold text-sm ${
+                        formData.isFreeShipping ? 'bg-emerald-50/60 border-emerald-300 text-emerald-800 cursor-not-allowed' : 'bg-gray-50 border-gray-200 focus:bg-white'
+                      }`}
+                      value={formData.isFreeShipping ? '' : (formData.shippingCost === 0 ? '' : formData.shippingCost)}
                       onChange={e => setFormData({...formData, shippingCost: Number(e.target.value) || 0})}
                     />
                   </div>
@@ -930,7 +963,9 @@ const SalesOrder = ({ setActiveTab }) => {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium text-sm">Ongkir (Pengiriman)</span>
-                      <span className="text-gray-800 font-semibold">{formatRp(getShippingCost())}</span>
+                      <span className={`font-semibold ${formData.isFreeShipping ? 'text-emerald-600 font-bold' : 'text-gray-800'}`}>
+                        {formData.isFreeShipping ? 'Free Ongkir' : formatRp(getShippingCost())}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-200">
                       <span className="text-gray-800 font-bold">Total Pesanan</span>

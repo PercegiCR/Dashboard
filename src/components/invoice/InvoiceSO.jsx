@@ -113,25 +113,32 @@ const InvoiceSO = ({ setActiveTab }) => {
             </tr>
           </thead>
           <tbody>
-            {so.items.map((item, i) => (
-              <tr key={i} className="border-b border-slate-100 last:border-slate-200 print-break-avoid">
-                <td className="p-3 print:py-1.5 print:px-2">
-                  <div className="font-medium text-slate-800 text-sm print:text-xs">{item.name}</div>
-                  {(item.size || (item.temperature && item.temperature !== 'Normal') || (item.sugarLevel && item.sugarLevel !== 'Normal') || (item.shotCount > 0) || item.notes) && (
-                    <div className="text-[11px] print:text-[10px] text-slate-500 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
-                      {item.size && <span>• {item.size}</span>}
-                      {item.temperature && item.temperature !== 'Normal' && <span>• {item.temperature}</span>}
-                      {item.sugarLevel && item.sugarLevel !== 'Normal' && <span>• {item.sugarLevel}</span>}
-                      {item.shotCount > 0 && <span>• Extra Shot</span>}
-                      {item.notes && <span className="italic text-slate-400">({item.notes})</span>}
-                    </div>
-                  )}
-                </td>
-                <td className="p-3 print:py-1.5 print:px-2 text-right text-slate-600 text-sm print:text-xs">{formatRp(item.price)}</td>
-                <td className="p-3 print:py-1.5 print:px-2 text-center font-medium text-slate-800 text-sm print:text-xs">{item.qty}</td>
-                <td className="p-3 print:py-1.5 print:px-2 text-right font-bold text-slate-800 text-sm print:text-xs">{formatRp(item.subtotal)}</td>
-              </tr>
-            ))}
+            {so.items.map((item, i) => {
+              // Bersihkan 'free ongkir' dari keterangan item agar tidak ganda karena sudah pindah ke baris Ongkir
+              const displayNotes = item.notes 
+                ? item.notes.replace(/\(?\b(free\s*ongkir|gratis\s*ongkir)\b\)?/gi, '').replace(/^\s*[,•-]\s*|\s*[,•-]\s*$/g, '').trim()
+                : '';
+
+              return (
+                <tr key={i} className="border-b border-slate-100 last:border-slate-200 print-break-avoid">
+                  <td className="p-3 print:py-1.5 print:px-2">
+                    <div className="font-medium text-slate-800 text-sm print:text-xs">{item.name}</div>
+                    {(item.size || (item.temperature && item.temperature !== 'Normal') || (item.sugarLevel && item.sugarLevel !== 'Normal') || (item.shotCount > 0) || displayNotes) && (
+                      <div className="text-[11px] print:text-[10px] text-slate-500 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
+                        {item.size && <span>• {item.size}</span>}
+                        {item.temperature && item.temperature !== 'Normal' && <span>• {item.temperature}</span>}
+                        {item.sugarLevel && item.sugarLevel !== 'Normal' && <span>• {item.sugarLevel}</span>}
+                        {item.shotCount > 0 && <span>• Extra Shot</span>}
+                        {displayNotes && <span className="italic text-slate-400">({displayNotes})</span>}
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3 print:py-1.5 print:px-2 text-right text-slate-600 text-sm print:text-xs">{formatRp(item.price)}</td>
+                  <td className="p-3 print:py-1.5 print:px-2 text-center font-medium text-slate-800 text-sm print:text-xs">{item.qty}</td>
+                  <td className="p-3 print:py-1.5 print:px-2 text-right font-bold text-slate-800 text-sm print:text-xs">{formatRp(item.subtotal)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
@@ -146,12 +153,17 @@ const InvoiceSO = ({ setActiveTab }) => {
               <span className="text-slate-600 font-medium">Pajak ({so.taxType || 'Non Pajak'})</span>
               <span className="font-bold text-slate-800">{formatRp(so.taxAmount || 0)}</span>
             </div>
-            {Number(so.shippingCost) > 0 && (
+            {Number(so.shippingCost) > 0 ? (
               <div className="flex justify-between py-1.5 print:py-1 border-b border-slate-200 text-sm print:text-xs">
                 <span className="text-slate-600 font-medium">Ongkos Kirim</span>
                 <span className="font-bold text-slate-800">{formatRp(so.shippingCost)}</span>
               </div>
-            )}
+            ) : (so.isFreeShipping || so.shippingType === 'free' || so.items?.some(it => it.notes && /\b(free\s*ongkir|gratis\s*ongkir)\b/i.test(it.notes))) ? (
+              <div className="flex justify-between py-1.5 print:py-1 border-b border-slate-200 text-sm print:text-xs">
+                <span className="text-slate-600 font-medium">Ongkos Kirim</span>
+                <span className="font-bold text-emerald-600">Free Ongkir</span>
+              </div>
+            ) : null}
             <div className="flex justify-between py-2.5 print:py-1.5 mt-2 print:mt-1 bg-amber-50 px-3.5 print:px-3 rounded-xl border border-amber-200">
               <span className="font-black text-amber-900 uppercase text-sm print:text-xs">Total Akhir</span>
               <span className="font-black text-amber-700 text-lg print:text-base">{formatRp(so.total)}</span>
