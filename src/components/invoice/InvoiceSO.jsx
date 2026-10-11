@@ -20,6 +20,17 @@ const InvoiceSO = ({ setActiveTab }) => {
     }
   }, [salesOrders, customers]);
 
+  useEffect(() => {
+    if (so) {
+      const prevTitle = document.title;
+      const custName = customer?.name ? customer.name.replace(/[\\/:*?"<>|]/g, '').trim() : 'Umum';
+      document.title = `${so.soNumber}_${custName}`;
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [so, customer]);
+
   if (!so) {
     return (
       <div className="p-8 text-center">
@@ -34,6 +45,8 @@ const InvoiceSO = ({ setActiveTab }) => {
   };
 
   const handlePrint = () => {
+    const custName = customer?.name ? customer.name.replace(/[\\/:*?"<>|]/g, '').trim() : 'Umum';
+    document.title = `${so.soNumber}_${custName}`;
     window.print();
   };
 

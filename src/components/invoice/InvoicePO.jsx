@@ -19,6 +19,17 @@ const InvoicePO = ({ setActiveTab }) => {
     }
   }, [purchaseOrders, vendors]);
 
+  useEffect(() => {
+    if (po) {
+      const prevTitle = document.title;
+      const vendorName = vendor?.name ? vendor.name.replace(/[\\/:*?"<>|]/g, '').trim() : 'Vendor';
+      document.title = `${po.poNumber}_${vendorName}`;
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [po, vendor]);
+
   if (!po) {
     return (
       <div className="p-8 text-center">
@@ -33,6 +44,8 @@ const InvoicePO = ({ setActiveTab }) => {
   };
 
   const handlePrint = () => {
+    const vendorName = vendor?.name ? vendor.name.replace(/[\\/:*?"<>|]/g, '').trim() : 'Vendor';
+    document.title = `${po.poNumber}_${vendorName}`;
     window.print();
   };
 
