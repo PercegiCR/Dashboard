@@ -128,6 +128,12 @@ const InvoiceSO = ({ setActiveTab }) => {
               <span className="text-slate-600 font-medium">Pajak ({so.taxType || 'Non Pajak'})</span>
               <span className="font-bold text-slate-800">{formatRp(so.taxAmount || 0)}</span>
             </div>
+            {Number(so.shippingCost) > 0 && (
+              <div className="flex justify-between py-2 border-b border-slate-200">
+                <span className="text-slate-600 font-medium">Ongkos Kirim</span>
+                <span className="font-bold text-slate-800">{formatRp(so.shippingCost)}</span>
+              </div>
+            )}
             <div className="flex justify-between py-3 mt-2 bg-amber-50 px-3 rounded-lg border border-amber-100">
               <span className="font-black text-amber-900 uppercase">Total Akhir</span>
               <span className="font-black text-amber-700 text-xl">{formatRp(so.total)}</span>

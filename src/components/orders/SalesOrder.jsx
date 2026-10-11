@@ -10,7 +10,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [formData, setFormData] = useState({ 
-    id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 
+    id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0 
   });
   
   const [customerInput, setCustomerInput] = useState('');
@@ -31,7 +31,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [temperature, setTemperature] = useState('Normal');
 
   const handleOpenModal = () => {
-    setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 });
+    setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0 });
     setCustomerInput('');
     setSelectedCustomerId('');
     setSelectedCategory('');
@@ -55,7 +55,8 @@ const SalesOrder = ({ setActiveTab }) => {
       status: so.status,
       items: [...so.items],
       taxType: so.taxType || 'Non Pajak',
-      taxRate: so.taxRate || 0
+      taxRate: so.taxRate || 0,
+      shippingCost: Number(so.shippingCost) || 0
     });
     const c = customers.find(cust => cust.id === so.customerId);
     setCustomerInput(c ? c.name : '');
@@ -210,7 +211,8 @@ const SalesOrder = ({ setActiveTab }) => {
 
   const getSubtotal = () => formData.items.reduce((acc, item) => acc + item.subtotal, 0);
   const getTaxAmount = () => getSubtotal() * (formData.taxRate / 100);
-  const getTotal = () => getSubtotal() + getTaxAmount();
+  const getShippingCost = () => Number(formData.shippingCost) || 0;
+  const getTotal = () => getSubtotal() + getTaxAmount() + getShippingCost();
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -251,6 +253,7 @@ const SalesOrder = ({ setActiveTab }) => {
       taxType: formData.taxType,
       taxRate: formData.taxRate,
       taxAmount: getTaxAmount(),
+      shippingCost: getShippingCost(),
       total: getTotal(),
       status: formData.status
     };
@@ -468,7 +471,14 @@ const SalesOrder = ({ setActiveTab }) => {
                     ))}
                   </div>
                 </td>
-                <td className="p-4 text-right font-bold text-emerald-600">{formatRp(so.total)}</td>
+                <td className="p-4 text-right">
+                  <div className="font-bold text-emerald-600">{formatRp(so.total)}</div>
+                  {Number(so.shippingCost) > 0 && (
+                    <div className="text-[11px] text-gray-400 font-normal mt-0.5">
+                      + Ongkir {formatRp(so.shippingCost)}
+                    </div>
+                  )}
+                </td>
                 <td className="p-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${so.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                     {so.status}
@@ -520,7 +530,7 @@ const SalesOrder = ({ setActiveTab }) => {
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="relative">
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Customer</label>
                   <input 
@@ -594,6 +604,20 @@ const SalesOrder = ({ setActiveTab }) => {
                     <option value="PPh|-2">PPh (-2%)</option>
                     <option value="PPh|-2.5">PPh (-2.5%)</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Ongkir</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-gray-400">Rp</span>
+                    <input 
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-3.5 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 font-semibold text-sm"
+                      value={formData.shippingCost === 0 ? '' : formData.shippingCost}
+                      onChange={e => setFormData({...formData, shippingCost: Number(e.target.value) || 0})}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -903,6 +927,10 @@ const SalesOrder = ({ setActiveTab }) => {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium text-sm">Pajak ({formData.taxType} {formData.taxRate > 0 ? `+${formData.taxRate}%` : formData.taxRate < 0 ? `${formData.taxRate}%` : ''})</span>
                       <span className="text-gray-800 font-semibold">{formatRp(getTaxAmount())}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium text-sm">Ongkir (Pengiriman)</span>
+                      <span className="text-gray-800 font-semibold">{formatRp(getShippingCost())}</span>
                     </div>
                     <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-200">
                       <span className="text-gray-800 font-bold">Total Pesanan</span>
