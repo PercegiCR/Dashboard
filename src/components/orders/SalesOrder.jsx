@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -16,6 +16,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [productInput, setProductInput] = useState('');
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
@@ -23,7 +24,7 @@ const SalesOrder = ({ setActiveTab }) => {
   const [itemNotes, setItemNotes] = useState('');
   const [sugarLevel, setSugarLevel] = useState('Normal');
   const [shotCount, setShotCount] = useState(0);
-  const [size, setSize] = useState('150 ml');
+  const [size, setSize] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [extraShotCost, setExtraShotCost] = useState(0);
   const [temperature, setTemperature] = useState('Normal');
@@ -32,8 +33,10 @@ const SalesOrder = ({ setActiveTab }) => {
     setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0 });
     setCustomerInput('');
     setSelectedCustomerId('');
+    setSelectedCategory('');
     setProductInput('');
     setSelectedProduct('');
+    setSize('');
     setIsModalOpen(true);
   };
 
@@ -69,14 +72,50 @@ const SalesOrder = ({ setActiveTab }) => {
     c.name.toLowerCase().includes(customerInput.toLowerCase())
   );
 
-  const productSuggestions = products.filter(p => 
-    p.name.toLowerCase().includes(productInput.toLowerCase())
-  );
+  const productCategories = useMemo(() => {
+    const cats = new Set(
+      products
+        .map(p => p.category?.trim())
+        .filter(Boolean)
+    );
+    if (cats.size === 0) {
+      return ['Minuman', 'Beans', 'Makanan', 'Snack', 'Lainnya'];
+    }
+    return Array.from(cats);
+  }, [products]);
+
+  const filteredProductsByCategory = useMemo(() => {
+    if (!selectedCategory) return [];
+    return products.filter(p => (p.category || '').toLowerCase() === selectedCategory.toLowerCase());
+  }, [products, selectedCategory]);
+
+  const productSuggestions = useMemo(() => {
+    if (!selectedCategory) return [];
+    if (!productInput) return filteredProductsByCategory;
+    return filteredProductsByCategory.filter(p => 
+      p.name.toLowerCase().includes(productInput.toLowerCase())
+    );
+  }, [filteredProductsByCategory, productInput, selectedCategory]);
+
+  const currentProduct = useMemo(() => {
+    return products.find(p => String(p.id) === String(selectedProduct));
+  }, [products, selectedProduct]);
+
+  const currentProductSizes = useMemo(() => {
+    if (!currentProduct) return [];
+    if (Array.isArray(currentProduct.sizes) && currentProduct.sizes.length > 0) {
+      return currentProduct.sizes;
+    }
+    if (currentProduct.size) {
+      return String(currentProduct.size).split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+  }, [currentProduct]);
 
   const addItem = () => {
     try {
       if (!selectedProduct) {
-        Swal.fire('Perhatian', 'Pilih produk terlebih dahulu!', 'warning');
+        Swal.fire('Perhatian', 'Pilih kategori dan produk terlebih dahulu!', 'warning');
         return;
       }
       if (Number(qty) <= 0) {
@@ -85,9 +124,15 @@ const SalesOrder = ({ setActiveTab }) => {
       }
       const product = products.find(p => String(p.id) === String(selectedProduct));
       if (!product) {
-        Swal.fire('Gagal', "Produk tidak ditemukan! ID yg dicari: '" + selectedProduct + "'. ID tersedia: " + products.map(p=>`'${p.id}'`).join(", "), 'error');
+        Swal.fire('Gagal', "Produk tidak ditemukan!", 'error');
         return;
       }
+
+      const prodSizes = (Array.isArray(product.sizes) && product.sizes.length > 0)
+        ? product.sizes
+        : (product.size ? String(product.size).split(',').map(s=>s.trim()).filter(Boolean) : []);
+      
+      const chosenSize = size || (prodSizes.length > 0 ? prodSizes[0] : '-');
 
       const additionalCost = Number(shotCount) > 0 ? Number(extraShotCost) : 0;
       const finalPrice = (Number(product.price) || 0) + additionalCost;
@@ -95,11 +140,12 @@ const SalesOrder = ({ setActiveTab }) => {
       const newItem = {
         productId: product.id,
         name: product.name,
+        category: product.category,
         price: Number(product.price) || 0,
         qty: Number(qty),
         sugarLevel,
         shotCount: Number(shotCount),
-        size,
+        size: chosenSize,
         extraShotCost: additionalCost,
         temperature,
         notes: itemNotes,
@@ -117,7 +163,7 @@ const SalesOrder = ({ setActiveTab }) => {
       setItemNotes('');
       setSugarLevel('Normal');
       setShotCount(0);
-      setSize('150 ml');
+      setSize('');
       setExtraShotCost(0);
       setTemperature('Normal');
     } catch (error) {
@@ -531,23 +577,53 @@ const SalesOrder = ({ setActiveTab }) => {
                   </h3>
                   
                   <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    {/* Baris 1: Kategori, Produk, Ukuran, Qty */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                      {/* Kategori */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Kategori</label>
+                        <select
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                          value={selectedCategory}
+                          onChange={(e) => {
+                            const newCat = e.target.value;
+                            setSelectedCategory(newCat);
+                            setSelectedProduct('');
+                            setProductInput('');
+                            setSize('');
+                          }}
+                        >
+                          <option value="">Pilih Kategori...</option>
+                          {productCategories.map((cat, idx) => (
+                            <option key={idx} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Produk */}
                       <div className="sm:col-span-2 relative">
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Produk</label>
                         <input 
                           type="text"
-                          placeholder="Ketik inisial / nama produk..."
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          disabled={!selectedCategory}
+                          placeholder={selectedCategory ? "Pilih / ketik nama produk..." : "← Pilih kategori dulu"}
+                          className={`w-full border rounded-lg px-3 py-2 text-sm transition-all ${
+                            !selectedCategory 
+                              ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed' 
+                              : 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500'
+                          }`}
                           value={productInput}
                           onChange={(e) => {
                             setProductInput(e.target.value);
                             setSelectedProduct('');
                             setShowProductSuggestions(true);
                           }}
-                          onFocus={() => setShowProductSuggestions(true)}
+                          onFocus={() => {
+                            if (selectedCategory) setShowProductSuggestions(true);
+                          }}
                           onBlur={() => setTimeout(() => setShowProductSuggestions(false), 200)}
                         />
-                        {showProductSuggestions && productInput && (
+                        {showProductSuggestions && selectedCategory && (
                           <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
                             {productSuggestions.length > 0 ? (
                               productSuggestions.map(p => {
@@ -560,9 +636,13 @@ const SalesOrder = ({ setActiveTab }) => {
                                     key={p.id} 
                                     className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800 flex justify-between items-center"
                                     onClick={() => {
-                                      setProductInput(`${p.name}${prodSizes.length > 0 ? ` (${prodSizes.join(', ')})` : ''} - ${formatRp(p.price)}`);
+                                      setProductInput(`${p.name} - ${formatRp(p.price)}`);
                                       setSelectedProduct(p.id);
-                                      if (prodSizes.length > 0) setSize(prodSizes[0]);
+                                      if (prodSizes.length > 0) {
+                                        setSize(prodSizes[0]);
+                                      } else {
+                                        setSize('-');
+                                      }
                                       setShowProductSuggestions(false);
                                     }}
                                   >
@@ -573,7 +653,6 @@ const SalesOrder = ({ setActiveTab }) => {
                                           {prodSizes.join(', ')}
                                         </span>
                                       )}
-                                      {p.category && <span className="ml-1 text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{p.category}</span>}
                                     </div>
                                     <span className="text-emerald-600 font-semibold">{formatRp(p.price)}</span>
                                   </li>
@@ -581,48 +660,37 @@ const SalesOrder = ({ setActiveTab }) => {
                               })
                             ) : (
                               <li className="px-4 py-2 text-sm text-gray-500 italic">
-                                Produk tidak ditemukan
+                                Tidak ada produk dalam kategori "{selectedCategory}"
                               </li>
                             )}
                           </ul>
                         )}
                       </div>
+
+                      {/* Ukuran */}
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Ukuran</label>
-                        <input
-                          type="text"
-                          list="so-size-options"
-                          placeholder="Pilih atau ketik ukuran..."
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          value={size}
-                          onChange={e => setSize(e.target.value)}
-                        />
-                        <datalist id="so-size-options">
-                          {(() => {
-                            const currentProd = products.find(p => String(p.id) === String(selectedProduct));
-                            const prodSizes = currentProd ? (Array.isArray(currentProd.sizes) && currentProd.sizes.length > 0 ? currentProd.sizes : (currentProd.size ? String(currentProd.size).split(',').map(s=>s.trim()).filter(Boolean) : [])) : [];
-                            return prodSizes.map((s, idx) => (
-                              <option key={`prod-${idx}`} value={s} />
-                            ));
-                          })()}
-                          <option value="150 ml" />
-                          <option value="200 gram" />
-                          <option value="250 gram" />
-                          <option value="300 ml" />
-                          <option value="500 gram" />
-                          <option value="600 ml" />
-                          <option value="1 kg" />
-                          <option value="1 Liter" />
-                          <option value="Regular" />
-                          <option value="Large" />
-                        </datalist>
-                        {(() => {
-                          const currentProd = products.find(p => String(p.id) === String(selectedProduct));
-                          const prodSizes = currentProd ? (Array.isArray(currentProd.sizes) && currentProd.sizes.length > 0 ? currentProd.sizes : (currentProd.size ? String(currentProd.size).split(',').map(s=>s.trim()).filter(Boolean) : [])) : [];
-                          if (prodSizes.length > 1) {
-                            return (
+                        {!selectedProduct ? (
+                          <select
+                            disabled
+                            className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400 cursor-not-allowed"
+                          >
+                            <option value="">Pilih produk...</option>
+                          </select>
+                        ) : currentProductSizes.length > 0 ? (
+                          <>
+                            <select
+                              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                              value={size}
+                              onChange={e => setSize(e.target.value)}
+                            >
+                              {currentProductSizes.map((s, idx) => (
+                                <option key={idx} value={s}>{s}</option>
+                              ))}
+                            </select>
+                            {currentProductSizes.length > 1 && (
                               <div className="flex flex-wrap gap-1 mt-1.5">
-                                {prodSizes.map((s, idx) => (
+                                {currentProductSizes.map((s, idx) => (
                                   <button
                                     key={idx}
                                     type="button"
@@ -637,11 +705,20 @@ const SalesOrder = ({ setActiveTab }) => {
                                   </button>
                                 ))}
                               </div>
-                            );
-                          }
-                          return null;
-                        })()}
+                            )}
+                          </>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Tidak ada ukuran"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            value={size}
+                            onChange={e => setSize(e.target.value)}
+                          />
+                        )}
                       </div>
+
+                      {/* Qty */}
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Qty</label>
                         <input 
@@ -650,6 +727,10 @@ const SalesOrder = ({ setActiveTab }) => {
                           value={qty} onChange={e => setQty(e.target.value)}
                         />
                       </div>
+                    </div>
+                    
+                    {/* Baris 2: Suhu, Gula, Extra Shot, Catatan, Tambah Item */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Suhu</label>
                         <select
@@ -661,9 +742,6 @@ const SalesOrder = ({ setActiveTab }) => {
                           <option value="Ice">Ice</option>
                         </select>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Gula</label>
                         <select
