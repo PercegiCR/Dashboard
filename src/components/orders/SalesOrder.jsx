@@ -4,7 +4,7 @@ import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lu
 import Swal from 'sweetalert2';
 
 const SalesOrder = ({ setActiveTab }) => {
-  const { salesOrders, customers, products, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer, importHistoricalSalesOrders } = useAppContext();
+  const { salesOrders, customers, products, categories, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer, importHistoricalSalesOrders } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
@@ -73,6 +73,9 @@ const SalesOrder = ({ setActiveTab }) => {
   );
 
   const productCategories = useMemo(() => {
+    if (categories && categories.length > 0) {
+      return categories.map(c => c.name);
+    }
     const cats = new Set(
       products
         .map(p => p.category?.trim())
@@ -82,7 +85,37 @@ const SalesOrder = ({ setActiveTab }) => {
       return ['Minuman', 'Beans', 'Makanan', 'Snack', 'Lainnya'];
     }
     return Array.from(cats);
-  }, [products]);
+  }, [categories, products]);
+
+  const activeCategoryConfig = useMemo(() => {
+    if (!selectedCategory) return null;
+    const found = (categories || []).find(c => c.name.toLowerCase() === selectedCategory.toLowerCase());
+    if (found) {
+      return {
+        showTemperature: found.showTemperature ?? true,
+        showSugar: found.showSugar ?? true,
+        showExtraShot: found.showExtraShot ?? true
+      };
+    }
+    const lower = selectedCategory.toLowerCase();
+    if (lower === 'beans' || lower === 'makanan' || lower === 'snack') {
+      return { showTemperature: false, showSugar: false, showExtraShot: false };
+    }
+    return { showTemperature: true, showSugar: true, showExtraShot: true };
+  }, [categories, selectedCategory]);
+
+  const notesColSpan = useMemo(() => {
+    if (!activeCategoryConfig) return 'sm:col-span-1 md:col-span-1';
+    let countHidden = 0;
+    if (!activeCategoryConfig.showTemperature) countHidden++;
+    if (!activeCategoryConfig.showSugar) countHidden++;
+    if (!activeCategoryConfig.showExtraShot) countHidden++;
+
+    if (countHidden === 3) return 'sm:col-span-2 md:col-span-4';
+    if (countHidden === 2) return 'sm:col-span-2 md:col-span-3';
+    if (countHidden === 1) return 'sm:col-span-1 md:col-span-2';
+    return 'sm:col-span-1 md:col-span-1';
+  }, [activeCategoryConfig]);
 
   const filteredProductsByCategory = useMemo(() => {
     if (!selectedCategory) return [];
@@ -134,7 +167,12 @@ const SalesOrder = ({ setActiveTab }) => {
       
       const chosenSize = size || (prodSizes.length > 0 ? prodSizes[0] : '-');
 
-      const additionalCost = Number(shotCount) > 0 ? Number(extraShotCost) : 0;
+      const isTempEnabled = activeCategoryConfig ? activeCategoryConfig.showTemperature : true;
+      const isSugarEnabled = activeCategoryConfig ? activeCategoryConfig.showSugar : true;
+      const isExtraShotEnabled = activeCategoryConfig ? activeCategoryConfig.showExtraShot : true;
+
+      const finalShotCount = isExtraShotEnabled ? Number(shotCount) : 0;
+      const additionalCost = finalShotCount > 0 ? Number(extraShotCost) : 0;
       const finalPrice = (Number(product.price) || 0) + additionalCost;
 
       const newItem = {
@@ -143,11 +181,11 @@ const SalesOrder = ({ setActiveTab }) => {
         category: product.category,
         price: Number(product.price) || 0,
         qty: Number(qty),
-        sugarLevel,
-        shotCount: Number(shotCount),
+        sugarLevel: isSugarEnabled ? sugarLevel : '',
+        shotCount: finalShotCount,
         size: chosenSize,
         extraShotCost: additionalCost,
-        temperature,
+        temperature: isTempEnabled ? temperature : '',
         notes: itemNotes,
         subtotal: finalPrice * Number(qty)
       };
@@ -731,44 +769,50 @@ const SalesOrder = ({ setActiveTab }) => {
                     
                     {/* Baris 2: Suhu, Gula, Extra Shot, Catatan, Tambah Item */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Suhu</label>
-                        <select
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          value={temperature} onChange={e => setTemperature(e.target.value)}
-                        >
-                          <option value="Normal">Normal</option>
-                          <option value="Hot">Hot</option>
-                          <option value="Ice">Ice</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Gula</label>
-                        <select
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
-                        >
-                          <option value="Normal">Normal</option>
-                          <option value="Less Sugar">Less Sugar</option>
-                          <option value="No Sugar">No Sugar</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Extra Shot</label>
-                        <select
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          value={shotCount} 
-                          onChange={e => {
-                            const val = Number(e.target.value);
-                            setShotCount(val);
-                            setExtraShotCost(val > 0 ? 5000 : 0);
-                          }}
-                        >
-                          <option value={0}>Normal</option>
-                          <option value={1}>Extra Shot</option>
-                        </select>
-                      </div>
-                      <div>
+                      {(!activeCategoryConfig || activeCategoryConfig.showTemperature) && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Suhu</label>
+                          <select
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            value={temperature} onChange={e => setTemperature(e.target.value)}
+                          >
+                            <option value="Normal">Normal</option>
+                            <option value="Hot">Hot</option>
+                            <option value="Ice">Ice</option>
+                          </select>
+                        </div>
+                      )}
+                      {(!activeCategoryConfig || activeCategoryConfig.showSugar) && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Gula</label>
+                          <select
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            value={sugarLevel} onChange={e => setSugarLevel(e.target.value)}
+                          >
+                            <option value="Normal">Normal</option>
+                            <option value="Less Sugar">Less Sugar</option>
+                            <option value="No Sugar">No Sugar</option>
+                          </select>
+                        </div>
+                      )}
+                      {(!activeCategoryConfig || activeCategoryConfig.showExtraShot) && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Extra Shot</label>
+                          <select
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            value={shotCount} 
+                            onChange={e => {
+                              const val = Number(e.target.value);
+                              setShotCount(val);
+                              setExtraShotCost(val > 0 ? 5000 : 0);
+                            }}
+                          >
+                            <option value={0}>Normal</option>
+                            <option value={1}>Extra Shot</option>
+                          </select>
+                        </div>
+                      )}
+                      <div className={notesColSpan}>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Catatan</label>
                         <input 
                           type="text" placeholder="Contoh: Es dipisah, dll"

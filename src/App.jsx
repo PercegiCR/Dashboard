@@ -15,6 +15,7 @@ const FinanceDashboard = lazy(() => import('./components/finance/FinanceDashboar
 const InvoiceSO = lazy(() => import('./components/invoice/InvoiceSO'));
 const InvoicePO = lazy(() => import('./components/invoice/InvoicePO'));
 const InvoiceSettings = lazy(() => import('./components/settings/InvoiceSettings'));
+const CategorySettings = lazy(() => import('./components/settings/CategorySettings'));
 const ExportData = lazy(() => import('./components/settings/ExportData'));
 const AccountSettings = lazy(() => import('./components/settings/AccountSettings'));
 const UserManagement = lazy(() => import('./components/settings/UserManagement'));
@@ -50,6 +51,8 @@ function App() {
         return <InvoiceSO setActiveTab={setActiveTab} />;
       case 'invoice_po':
         return <InvoicePO setActiveTab={setActiveTab} />;
+      case 'settings_category':
+        return <CategorySettings />;
       case 'settings_invoice':
         return <InvoiceSettings />;
       case 'settings_export':

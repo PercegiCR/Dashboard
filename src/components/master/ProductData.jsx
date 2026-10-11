@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, Edit, Trash2, X, PackagePlus, Search } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const ProductData = () => {
-  const { products, inventory, addProduct, updateProduct, deleteProduct, produceProduct } = useAppContext();
+  const { products, inventory, categories, addProduct, updateProduct, deleteProduct, produceProduct } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ id: null, code: '', name: '', category: '', sizes: [], price: 0, recipe: [] });
   const [sizeInput, setSizeInput] = useState('');
@@ -15,6 +15,17 @@ const ProductData = () => {
   const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
   const [produceData, setProduceData] = useState({ productId: null, productName: '', qty: 1 });
   const [searchTerm, setSearchTerm] = useState('');
+
+  const categoryOptions = useMemo(() => {
+    const cats = new Set((categories || []).map(c => c.name?.trim()).filter(Boolean));
+    if (formData.category && !cats.has(formData.category)) {
+      cats.add(formData.category);
+    }
+    if (cats.size === 0) {
+      return ['Minuman', 'Beans', 'Makanan', 'Snack', 'Lainnya'];
+    }
+    return Array.from(cats);
+  }, [categories, formData.category]);
 
   const filteredproducts = products.filter(item => {
     const term = searchTerm.toLowerCase();
@@ -297,18 +308,17 @@ const ProductData = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kategori</label>
-                  <input 
-                    type="text" required list="kategori-options" placeholder="Pilih atau ketik kategori..."
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
-                    value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
-                  />
-                  <datalist id="kategori-options">
-                    <option value="Minuman" />
-                    <option value="Makanan" />
-                    <option value="Snack" />
-                    <option value="Beans" />
-                    <option value="Lainnya" />
-                  </datalist>
+                  <select
+                    required
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 font-medium text-sm"
+                    value={formData.category} 
+                    onChange={e => setFormData({...formData, category: e.target.value})}
+                  >
+                    <option value="">Pilih Kategori...</option>
+                    {categoryOptions.map((cat, idx) => (
+                      <option key={idx} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Jual</label>

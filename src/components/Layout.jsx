@@ -40,6 +40,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
   ];
 
   const settingItems = [
+    { id: 'settings_category', label: 'Atur Kategori' },
     { id: 'settings_invoice', label: 'Atur Invoice' },
     { id: 'settings_export', label: 'Export Masal' },
     { id: 'settings_account', label: 'Atur Akun' },

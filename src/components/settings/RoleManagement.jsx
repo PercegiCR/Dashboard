@@ -11,6 +11,7 @@ const availablePages = [
   { id: 'customer', label: 'Data Customer' },
   { id: 'vendor', label: 'Data Vendor' },
   { id: 'finance', label: 'Finance Dashboard' },
+  { id: 'settings_category', label: 'Atur Kategori' },
   { id: 'settings_invoice', label: 'Atur Invoice' },
   { id: 'settings_export', label: 'Export Masal' },
   { id: 'settings_account', label: 'Atur Akun' },

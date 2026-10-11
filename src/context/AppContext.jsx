@@ -67,6 +67,7 @@ export const AppProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [settings, setSettings] = useState({
     shopName: 'Percegi Coffee',
     shopAddress: 'Jl. Kopi Nusantara No. 1, Jakarta',
@@ -86,6 +87,9 @@ export const AppProvider = ({ children }) => {
     const unsubProducts = onSnapshot(collection(db, 'products'), snap => {
       setProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
+    const unsubCategories = onSnapshot(collection(db, 'categories'), snap => {
+      setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
     const unsubSalesOrders = onSnapshot(collection(db, 'salesOrders'), snap => {
       setSalesOrders(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
@@ -103,6 +107,7 @@ export const AppProvider = ({ children }) => {
       unsubCustomers();
       unsubInventory();
       unsubProducts();
+      unsubCategories();
       unsubSalesOrders();
       unsubPurchaseOrders();
       unsubSettings();
@@ -159,6 +164,23 @@ export const AppProvider = ({ children }) => {
   }, []);
   const deleteProduct = useCallback(async (id) => {
     await deleteDoc(doc(db, 'products', id));
+  }, []);
+
+  const addCategory = useCallback(async (category) => {
+    const { id: _id, ...rest } = category;
+    await addDoc(collection(db, 'categories'), {
+      showTemperature: true,
+      showSugar: true,
+      showExtraShot: true,
+      createdAt: new Date().toISOString(),
+      ...rest
+    });
+  }, []);
+  const updateCategory = useCallback(async (id, category) => {
+    await updateDoc(doc(db, 'categories', id), category);
+  }, []);
+  const deleteCategory = useCallback(async (id) => {
+    await deleteDoc(doc(db, 'categories', id));
   }, []);
 
   const produceProduct = useCallback(async (productId, qty) => {
@@ -325,6 +347,7 @@ export const AppProvider = ({ children }) => {
     customers, addCustomer, updateCustomer, deleteCustomer,
     inventory, addInventory, updateInventory, deleteInventory,
     products, addProduct, updateProduct, deleteProduct, produceProduct,
+    categories, addCategory, updateCategory, deleteCategory,
     salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
     purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
   }), [
@@ -333,6 +356,7 @@ export const AppProvider = ({ children }) => {
     customers, addCustomer, updateCustomer, deleteCustomer,
     inventory, addInventory, updateInventory, deleteInventory,
     products, addProduct, updateProduct, deleteProduct, produceProduct,
+    categories, addCategory, updateCategory, deleteCategory,
     salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
     purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
   ]);
