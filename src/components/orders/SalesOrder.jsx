@@ -553,14 +553,20 @@ const SalesOrder = ({ setActiveTab }) => {
                               productSuggestions.map(p => (
                                 <li 
                                   key={p.id} 
-                                  className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800"
+                                  className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800 flex justify-between items-center"
                                   onClick={() => {
-                                    setProductInput(`${p.name} - ${formatRp(p.price)}`);
+                                    setProductInput(`${p.name}${p.size ? ` (${p.size})` : ''} - ${formatRp(p.price)}`);
                                     setSelectedProduct(p.id);
+                                    if (p.size) setSize(p.size);
                                     setShowProductSuggestions(false);
                                   }}
                                 >
-                                  {p.name} - {formatRp(p.price)}
+                                  <div>
+                                    <span className="font-medium">{p.name}</span>
+                                    {p.size && <span className="ml-2 text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded font-medium border border-stone-200">{p.size}</span>}
+                                    {p.category && <span className="ml-1 text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{p.category}</span>}
+                                  </div>
+                                  <span className="text-emerald-600 font-semibold">{formatRp(p.price)}</span>
                                 </li>
                               ))
                             ) : (
@@ -573,15 +579,26 @@ const SalesOrder = ({ setActiveTab }) => {
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Ukuran</label>
-                        <select
+                        <input
+                          type="text"
+                          list="so-size-options"
+                          placeholder="Pilih atau ketik ukuran..."
                           className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          value={size} onChange={e => setSize(e.target.value)}
-                        >
-                          <option value="150 ml">150 ml</option>
-                          <option value="300 ml">300 ml</option>
-                          <option value="600 ml">600 ml</option>
-                          <option value="1 Liter">1 Liter</option>
-                        </select>
+                          value={size}
+                          onChange={e => setSize(e.target.value)}
+                        />
+                        <datalist id="so-size-options">
+                          <option value="150 ml" />
+                          <option value="200 gram" />
+                          <option value="250 gram" />
+                          <option value="300 ml" />
+                          <option value="500 gram" />
+                          <option value="600 ml" />
+                          <option value="1 kg" />
+                          <option value="1 Liter" />
+                          <option value="Regular" />
+                          <option value="Large" />
+                        </datalist>
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Qty</label>

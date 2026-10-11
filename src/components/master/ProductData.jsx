@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 const ProductData = () => {
   const { products, inventory, addProduct, updateProduct, deleteProduct, produceProduct } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ id: null, code: '', name: '', category: '', price: 0, recipe: [] });
+  const [formData, setFormData] = useState({ id: null, code: '', name: '', category: '', size: '', price: 0, recipe: [] });
   const [selectedInv, setSelectedInv] = useState('');
   const [invQty, setInvQty] = useState('');
   const [invUnit, setInvUnit] = useState('gram');
@@ -21,6 +21,16 @@ const ProductData = () => {
     )
   );
 
+  const getCategoryBadgeClass = (category) => {
+    const cat = (category || '').toLowerCase();
+    if (cat === 'minuman') return 'bg-cyan-100 text-cyan-700';
+    if (cat === 'beans') return 'bg-amber-100 text-amber-800 border border-amber-300';
+    if (cat === 'makanan') return 'bg-emerald-100 text-emerald-700';
+    if (cat === 'snack') return 'bg-yellow-100 text-yellow-800';
+    if (cat.includes('botol')) return 'bg-purple-100 text-purple-700';
+    return 'bg-orange-100 text-orange-700';
+  };
+
   const generateProductCode = () => {
     const prdCodes = products
       .filter(p => p.code && p.code.startsWith('PRD-'))
@@ -33,9 +43,9 @@ const ProductData = () => {
 
   const handleOpenModal = (item = null) => {
     if (item) {
-      setFormData({ ...item, recipe: item.recipe || [] });
+      setFormData({ ...item, size: item.size || '', recipe: item.recipe || [] });
     } else {
-      setFormData({ id: null, code: generateProductCode(), name: '', category: '', price: 0, recipe: [] });
+      setFormData({ id: null, code: generateProductCode(), name: '', category: '', size: '', price: 0, recipe: [] });
     }
     setIsModalOpen(true);
   };
@@ -64,6 +74,7 @@ const ProductData = () => {
     e.preventDefault();
     const dataToSave = {
       ...formData,
+      size: formData.size ? formData.size.trim() : '',
       price: Number(formData.price)
     };
     
@@ -129,6 +140,7 @@ const ProductData = () => {
               <th className="p-4 font-semibold">Kode</th>
               <th className="p-4 font-semibold">Nama Menu</th>
               <th className="p-4 font-semibold">Kategori</th>
+              <th className="p-4 font-semibold">Ukuran</th>
               <th className="p-4 font-semibold text-right">Harga Jual</th>
               <th className="p-4 font-semibold text-right">Stok</th>
               <th className="p-4 font-semibold text-right">Aksi</th>
@@ -140,9 +152,18 @@ const ProductData = () => {
                 <td className="p-4 font-mono text-sm text-amber-600 font-medium">{item.code}</td>
                 <td className="p-4 font-medium text-gray-900">{item.name}</td>
                 <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${item.category === 'Minuman' ? 'bg-cyan-100 text-cyan-700' : 'bg-orange-100 text-orange-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryBadgeClass(item.category)}`}>
                     {item.category}
                   </span>
+                </td>
+                <td className="p-4 text-sm">
+                  {item.size ? (
+                    <span className="px-2.5 py-1 rounded-md bg-stone-100 text-stone-700 text-xs font-semibold border border-stone-200">
+                      {item.size}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs italic">-</span>
+                  )}
                 </td>
                 <td className="p-4 text-right font-bold text-emerald-600">{formatRp(item.price)}</td>
                 <td className="p-4 text-right font-bold text-blue-600">{item.stock || 0}</td>
@@ -177,7 +198,7 @@ const ProductData = () => {
             ))}
             {filteredproducts.length === 0 && (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-gray-500">Belum ada data produk.</td>
+                <td colSpan="7" className="p-8 text-center text-gray-500">Belum ada data produk.</td>
               </tr>
             )}
           </tbody>
@@ -187,7 +208,7 @@ const ProductData = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-overlay">
-          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl ring-1 ring-gray-900/5 animate-popup">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-lg shadow-2xl ring-1 ring-gray-900/5 animate-popup">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{formData.id ? 'Edit Menu' : 'Tambah Menu'}</h2>
@@ -198,7 +219,7 @@ const ProductData = () => {
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="flex flex-col gap-5">
+            <form onSubmit={handleSave} className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kode Produk</label>
@@ -229,17 +250,38 @@ const ProductData = () => {
                     <option value="Minuman" />
                     <option value="Makanan" />
                     <option value="Snack" />
+                    <option value="Beans" />
                     <option value="Lainnya" />
                   </datalist>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Jual</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ukuran</label>
                   <input 
-                    type="number" required min="0"
+                    type="text" list="ukuran-options" placeholder="Pilih atau ketik ukuran..."
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
-                    value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}
+                    value={formData.size || ''} onChange={e => setFormData({...formData, size: e.target.value})}
                   />
+                  <datalist id="ukuran-options">
+                    <option value="150 ml" />
+                    <option value="200 gram" />
+                    <option value="250 gram" />
+                    <option value="300 ml" />
+                    <option value="500 gram" />
+                    <option value="600 ml" />
+                    <option value="1 kg" />
+                    <option value="1 Liter" />
+                    <option value="Regular" />
+                    <option value="Large" />
+                  </datalist>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Harga Jual</label>
+                <input 
+                  type="number" required min="0"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
+                  value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}
+                />
               </div>
 
               <div className="border border-gray-200 p-4 rounded-2xl bg-gray-50/50 shadow-sm mt-2">
