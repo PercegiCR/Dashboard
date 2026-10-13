@@ -170,7 +170,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
               <Menu size={24} />
             </button>
             <div className="font-semibold text-gray-700 capitalize">
-              {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
+              {[...menuItems, ...settingItems, { id: 'invoice_so', label: 'Invoice Sales Order' }, { id: 'invoice_po', label: 'Invoice Purchase Order' }].find(m => m.id === activeTab)?.label || 'Dashboard'}
             </div>
           </div>
           <div className="flex items-center gap-4 relative">

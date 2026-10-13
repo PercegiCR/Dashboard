@@ -1,5 +1,6 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
+import { useRouter } from './context/RouterContext';
 import Layout from './components/Layout';
 import Login from './components/auth/Login';
 
@@ -22,7 +23,7 @@ const UserManagement = lazy(() => import('./components/settings/UserManagement')
 const RoleManagement = lazy(() => import('./components/settings/RoleManagement'));
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const { activeTab, setActiveTab } = useRouter();
   const { currentUser } = useAuth();
 
   if (!currentUser) {
