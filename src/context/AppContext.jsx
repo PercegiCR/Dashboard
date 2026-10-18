@@ -301,11 +301,18 @@ export const AppProvider = ({ children }) => {
           customerId = existingCustomer.id;
         } else {
           customerId = generateCustomId('CST', currentCustomers);
-          const newCustomer = { id: customerId, name: data.customerName, type: 'Umum', phone: '', address: '' };
+          const newCustomer = { id: customerId, name: data.customerName, type: 'Umum', phone: '', address: '', termin: 'Cash', statusPembayaran: 'Lancar' };
           currentCustomers.push(newCustomer);
           
           const custRef = doc(db, 'customers', customerId);
-          batch.set(custRef, { name: newCustomer.name, type: newCustomer.type, phone: newCustomer.phone, address: newCustomer.address });
+          batch.set(custRef, { 
+            name: newCustomer.name, 
+            type: newCustomer.type, 
+            phone: newCustomer.phone, 
+            address: newCustomer.address,
+            termin: newCustomer.termin,
+            statusPembayaran: newCustomer.statusPembayaran
+          });
         }
 
         const newOrderRef = doc(collection(db, 'salesOrders'));

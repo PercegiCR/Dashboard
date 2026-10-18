@@ -1,16 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search, CheckCircle2, Clock, Lock, AlertCircle, AlertTriangle } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { formatRp, getProductSizes, getSizePrice, getProductPriceDisplay } from '../../utils/productUtils';
+
+export const normalizeStatus = (status) => {
+  if (!status) return 'Belum Lunas';
+  const s = String(status).trim().toLowerCase();
+  if (s === 'pending') return 'Belum Lunas';
+  if (s === 'onhold' || s === 'on hold') return 'Onhold';
+  if (s === 'lunas') return 'Lunas';
+  if (s === 'belum lunas') return 'Belum Lunas';
+  return status;
+};
 
 const SalesOrder = ({ setActiveTab }) => {
   const { salesOrders, customers, products, categories, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer, importHistoricalSalesOrders } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('Semua'); // 'Semua', 'Lunas', 'Belum Lunas', 'Onhold'
   const [formData, setFormData] = useState({ 
-    id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0, isFreeShipping: false 
+    id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Belum Lunas', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0, isFreeShipping: false 
   });
   
   const [customerInput, setCustomerInput] = useState('');
@@ -30,8 +41,22 @@ const SalesOrder = ({ setActiveTab }) => {
   const [extraShotCost, setExtraShotCost] = useState(0);
   const [temperature, setTemperature] = useState('Normal');
 
+  const getCustomerOutstandingSOs = useCallback((customerId, currentSoId = null) => {
+    if (!customerId) return [];
+    return (salesOrders || []).filter(so => {
+      if (currentSoId && so.id === currentSoId) return false;
+      if (so.customerId !== customerId) return false;
+      const st = normalizeStatus(so.status);
+      return st === 'Belum Lunas' || st === 'Onhold';
+    });
+  }, [salesOrders]);
+
+  const activeCustomerOutstanding = useMemo(() => {
+    return getCustomerOutstandingSOs(selectedCustomerId, formData.id);
+  }, [selectedCustomerId, formData.id, getCustomerOutstandingSOs]);
+
   const handleOpenModal = () => {
-    setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Pending', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0, isFreeShipping: false });
+    setFormData({ id: null, customerId: '', date: new Date().toISOString().split('T')[0], status: 'Belum Lunas', items: [], taxType: 'Non Pajak', taxRate: 0, shippingCost: 0, isFreeShipping: false });
     setCustomerInput('');
     setSelectedCustomerId('');
     setSelectedCategory('');
@@ -53,7 +78,7 @@ const SalesOrder = ({ setActiveTab }) => {
       id: so.id,
       customerId: so.customerId,
       date: so.date || new Date().toISOString().split('T')[0],
-      status: so.status,
+      status: normalizeStatus(so.status),
       items: [...so.items],
       taxType: so.taxType || 'Non Pajak',
       taxRate: so.taxRate || 0,
@@ -66,9 +91,35 @@ const SalesOrder = ({ setActiveTab }) => {
     setIsModalOpen(true);
   };
 
+  const handleSelectCustomer = (c) => {
+    setCustomerInput(c.name);
+    setSelectedCustomerId(c.id);
+    setShowCustomerSuggestions(false);
+    
+    // Auto-detect if customer has previous outstanding SOs
+    const outstanding = getCustomerOutstandingSOs(c.id, formData.id);
+    if (outstanding.length > 0 && formData.status !== 'Lunas') {
+      setFormData(prev => ({ ...prev, customerId: c.id, status: 'Onhold' }));
+    } else {
+      setFormData(prev => ({ ...prev, customerId: c.id }));
+    }
+  };
+
   const handleCustomerInputChange = (e) => {
-    setCustomerInput(e.target.value);
-    setSelectedCustomerId('');
+    const val = e.target.value;
+    setCustomerInput(val);
+    const matched = customers.find(c => c.name.toLowerCase() === val.trim().toLowerCase());
+    if (matched) {
+      setSelectedCustomerId(matched.id);
+      const outstanding = getCustomerOutstandingSOs(matched.id, formData.id);
+      if (outstanding.length > 0 && formData.status !== 'Lunas') {
+        setFormData(prev => ({ ...prev, customerId: matched.id, status: 'Onhold' }));
+      } else {
+        setFormData(prev => ({ ...prev, customerId: matched.id }));
+      }
+    } else {
+      setSelectedCustomerId('');
+    }
     setShowCustomerSuggestions(true);
   };
 
@@ -243,8 +294,19 @@ const SalesOrder = ({ setActiveTab }) => {
         name: customerInput.trim(), 
         type: 'Umum', 
         phone: '', 
-        address: '' 
+        address: '',
+        termin: 'Cash',
+        statusPembayaran: 'Lancar'
       });
+    }
+
+    // Requirement 3: SO ke hold diliat dari history pembayaran kalo masih outstanding/belum lunas dari SO sebelumnya
+    let finalStatus = formData.status;
+    if (finalStatus !== 'Lunas') {
+      const outstanding = getCustomerOutstandingSOs(finalCustomerId, formData.id);
+      if (outstanding.length > 0) {
+        finalStatus = 'Onhold';
+      }
     }
 
     const dataToSave = {
@@ -258,19 +320,44 @@ const SalesOrder = ({ setActiveTab }) => {
       shippingCost: formData.isFreeShipping ? 0 : getShippingCost(),
       isFreeShipping: formData.isFreeShipping || false,
       total: getTotal(),
-      status: formData.status
+      status: finalStatus
     };
     
     if (formData.id) {
       updateSalesOrder(formData.id, dataToSave);
+      Swal.fire('Berhasil!', 'Sales Order berhasil diperbarui.', 'success');
     } else {
       addSalesOrder(dataToSave);
+      if (finalStatus === 'Onhold') {
+        Swal.fire({
+          title: 'Pesanan Dibuat (Onhold)',
+          text: 'Sales Order disimpan dengan status Onhold karena customer memiliki riwayat tagihan yang belum lunas.',
+          icon: 'warning',
+          confirmButtonColor: '#f59e0b'
+        });
+      } else {
+        Swal.fire('Berhasil!', 'Sales Order baru berhasil dibuat.', 'success');
+      }
     }
     setIsModalOpen(false);
   };
 
   const markAsLunas = (id) => {
-    updateSalesOrder(id, { status: 'Lunas' });
+    Swal.fire({
+      title: 'Tandai Sebagai Lunas?',
+      text: 'Status Sales Order akan diubah menjadi Lunas.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, Lunas!',
+      cancelButtonText: 'Batal'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        updateSalesOrder(id, { status: 'Lunas' });
+        Swal.fire('Berhasil!', 'Status SO telah diubah menjadi Lunas.', 'success');
+      }
+    });
   };
 
   const handleDeleteSO = (id) => {
@@ -296,11 +383,54 @@ const SalesOrder = ({ setActiveTab }) => {
     return c ? c.name : 'Unknown Customer';
   };
 
-  const filteredsalesOrders = salesOrders.filter(item => {
-    const custName = getCustomerName(item.customerId);
-    const searchStr = `${item.soNumber} ${item.date} ${custName} ${item.status} ${item.total}`.toLowerCase();
-    return searchStr.includes(searchTerm.toLowerCase());
-  });
+  // KPI Metrics Calculation for Dashboard SO
+  const { countAll, countLunas, countBelumLunas, countOnhold, totalRpAll, totalRpLunas, totalRpBelumLunas, totalRpOnhold } = useMemo(() => {
+    let cAll = 0, cLunas = 0, cBelum = 0, cHold = 0;
+    let rpAll = 0, rpLunas = 0, rpBelum = 0, rpHold = 0;
+
+    (salesOrders || []).forEach(so => {
+      const st = normalizeStatus(so.status);
+      const tot = Number(so.total) || 0;
+      cAll++;
+      rpAll += tot;
+      if (st === 'Lunas') {
+        cLunas++;
+        rpLunas += tot;
+      } else if (st === 'Onhold') {
+        cHold++;
+        rpHold += tot;
+      } else {
+        cBelum++;
+        rpBelum += tot;
+      }
+    });
+
+    return {
+      countAll: cAll,
+      countLunas: cLunas,
+      countBelumLunas: cBelum,
+      countOnhold: cHold,
+      totalRpAll: rpAll,
+      totalRpLunas: rpLunas,
+      totalRpBelumLunas: rpBelum,
+      totalRpOnhold: rpHold
+    };
+  }, [salesOrders]);
+
+  const filteredsalesOrders = useMemo(() => {
+    return (salesOrders || []).filter(item => {
+      const custName = getCustomerName(item.customerId);
+      const normSt = normalizeStatus(item.status);
+      
+      // Filter tab status
+      if (statusFilter !== 'Semua' && normSt !== statusFilter) {
+        return false;
+      }
+
+      const searchStr = `${item.soNumber} ${item.date} ${custName} ${normSt} ${item.status} ${item.total}`.toLowerCase();
+      return searchStr.includes(searchTerm.toLowerCase());
+    });
+  }, [salesOrders, statusFilter, searchTerm, customers]);
 
   const downloadTemplate = () => {
     const headers = "CustomerName,InvoiceNumber,InvoiceDate,ItemName,ItemPrice,ItemQty,Status,TaxType,TaxRate\n";
@@ -404,55 +534,154 @@ const SalesOrder = ({ setActiveTab }) => {
 
   return (
     <div className="flex flex-col gap-6 pb-24">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Sales Order (SO)</h1>
-          <p className="text-gray-500 mt-1">Catat transaksi penjualan ke pelanggan.</p>
+          <p className="text-gray-500 mt-1">Kelola transaksi penjualan, status pesanan (Lunas, Belum Lunas, Onhold), dan cetak invoice.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button 
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-md"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
           >
             <FileText size={18} /> Import Data Historis
           </button>
           <button 
             onClick={handleOpenModal}
-            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-md"
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
           >
             <ShoppingCart size={18} /> Buat Pesanan
           </button>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-md border border-gray-100 flex items-center gap-3">
-        <Search className="text-gray-400" size={20} />
-        <input 
-          type="text" 
-          placeholder="Cari Sales Order..." 
-          className="w-full outline-none text-gray-700 bg-transparent"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* KPI Summary Cards for Dashboard SO */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div 
+          onClick={() => setStatusFilter('Semua')}
+          className={`p-5 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === 'Semua' 
+              ? 'bg-white border-amber-500 shadow-md ring-2 ring-amber-500/20' 
+              : 'bg-white border-gray-100 shadow-sm hover:border-gray-200'
+          }`}
+        >
+          <div className="flex items-center justify-between text-gray-500 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider">Total Sales Order</span>
+            <span className="p-2 bg-gray-50 text-gray-700 rounded-xl"><ShoppingCart size={18} /></span>
+          </div>
+          <div className="text-2xl font-black text-gray-900">{countAll} <span className="text-xs font-semibold text-gray-400">Order</span></div>
+          <p className="text-xs font-bold text-gray-600 mt-1">{formatRp(totalRpAll)}</p>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter('Lunas')}
+          className={`p-5 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === 'Lunas' 
+              ? 'bg-white border-emerald-500 shadow-md ring-2 ring-emerald-500/20' 
+              : 'bg-white border-gray-100 shadow-sm hover:border-gray-200'
+          }`}
+        >
+          <div className="flex items-center justify-between text-emerald-600 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider">Lunas</span>
+            <span className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 size={18} /></span>
+          </div>
+          <div className="text-2xl font-black text-emerald-700">{countLunas} <span className="text-xs font-semibold text-emerald-600">Order</span></div>
+          <p className="text-xs font-bold text-emerald-600 mt-1">{formatRp(totalRpLunas)}</p>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter('Belum Lunas')}
+          className={`p-5 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === 'Belum Lunas' 
+              ? 'bg-white border-amber-500 shadow-md ring-2 ring-amber-500/20' 
+              : 'bg-white border-gray-100 shadow-sm hover:border-gray-200'
+          }`}
+        >
+          <div className="flex items-center justify-between text-amber-600 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider">Belum Lunas</span>
+            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Clock size={18} /></span>
+          </div>
+          <div className="text-2xl font-black text-amber-700">{countBelumLunas} <span className="text-xs font-semibold text-amber-600">Order</span></div>
+          <p className="text-xs font-bold text-amber-600 mt-1">{formatRp(totalRpBelumLunas)}</p>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter('Onhold')}
+          className={`p-5 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === 'Onhold' 
+              ? 'bg-white border-rose-500 shadow-md ring-2 ring-rose-500/20' 
+              : 'bg-white border-gray-100 shadow-sm hover:border-gray-200'
+          }`}
+        >
+          <div className="flex items-center justify-between text-rose-600 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider">Onhold (Ditahan)</span>
+            <span className="p-2 bg-rose-50 text-rose-600 rounded-xl"><Lock size={18} /></span>
+          </div>
+          <div className="text-2xl font-black text-rose-700">{countOnhold} <span className="text-xs font-semibold text-rose-600">Order</span></div>
+          <p className="text-xs font-bold text-rose-600 mt-1">{formatRp(totalRpOnhold)}</p>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+      {/* Filter Tabs & Search Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { id: 'Semua', label: 'Semua SO', count: countAll },
+            { id: 'Lunas', label: 'Lunas', count: countLunas },
+            { id: 'Belum Lunas', label: 'Belum Lunas', count: countBelumLunas },
+            { id: 'Onhold', label: 'Onhold', count: countOnhold },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+                statusFilter === tab.id
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-black ${
+                statusFilter === tab.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 flex-1 max-w-md">
+          <Search className="text-gray-400" size={20} />
+          <input 
+            type="text" 
+            placeholder="Cari No. SO, customer, status, total..." 
+            className="w-full outline-none text-gray-700 bg-transparent text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead>
-            <tr className="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider border-b border-gray-200">
-              <th className="p-4 font-semibold">No. SO</th>
-              <th className="p-4 font-semibold">Tanggal</th>
-              <th className="p-4 font-semibold">Customer</th>
-              <th className="p-4 font-semibold">Item Pesanan</th>
-              <th className="p-4 font-semibold text-right">Total</th>
-              <th className="p-4 font-semibold">Status</th>
-              <th className="p-4 font-semibold text-right">Aksi</th>
+            <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+              <th className="p-4 font-bold">No. SO</th>
+              <th className="p-4 font-bold">Tanggal</th>
+              <th className="p-4 font-bold">Customer</th>
+              <th className="p-4 font-bold">Item Pesanan</th>
+              <th className="p-4 font-bold text-right">Total</th>
+              <th className="p-4 font-bold">Status</th>
+              <th className="p-4 font-bold text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filteredsalesOrders.map(so => (
-              <tr key={so.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 text-gray-700">
+            {filteredsalesOrders.map(so => {
+              const normStatus = normalizeStatus(so.status);
+
+              return (
+              <tr key={so.id} className="hover:bg-amber-50/30 transition-colors border-b border-gray-100 last:border-0 text-gray-700">
                 <td className="p-4 font-mono text-sm text-amber-600 font-bold">{so.soNumber}</td>
                 <td className="p-4">{so.date}</td>
                 <td className="p-4 font-medium text-gray-900">{getCustomerName(so.customerId)}</td>
@@ -492,35 +721,74 @@ const SalesOrder = ({ setActiveTab }) => {
                   ) : null}
                 </td>
                 <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${so.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                    {so.status}
-                  </span>
+                  {normStatus === 'Lunas' ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm">
+                      <CheckCircle2 size={13} className="text-emerald-600" />
+                      Lunas
+                    </span>
+                  ) : normStatus === 'Onhold' ? (
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 shadow-sm" title="Pesanan ditahan karena customer memiliki tagihan sebelumnya yang belum lunas">
+                        <Lock size={12} className="text-rose-600" />
+                        Onhold
+                      </span>
+                      <span className="text-[10px] text-rose-600 font-semibold">Tunggakan sebelumnya</span>
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
+                      <Clock size={13} className="text-amber-600" />
+                      Belum Lunas
+                    </span>
+                  )}
                 </td>
                 <td className="p-4">
-                  <div className="flex justify-end gap-2">
-                    {so.status === 'Pending' && (
+                  <div className="flex justify-end gap-1.5">
+                    {normStatus !== 'Lunas' && (
                       <>
-                        <button onClick={() => markAsLunas(so.id)} title="Tandai Lunas" className="text-emerald-500 hover:text-emerald-700 transition-colors p-2">
+                        <button 
+                          onClick={() => markAsLunas(so.id)} 
+                          title="Tandai Lunas" 
+                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors p-2 rounded-lg"
+                        >
                           <Check size={18} />
                         </button>
-                        <button onClick={() => handleEditModal(so)} title="Edit SO" className="text-amber-500 hover:text-amber-700 transition-colors p-2">
+                        <button 
+                          onClick={() => handleEditModal(so)} 
+                          title="Edit SO" 
+                          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors p-2 rounded-lg"
+                        >
                           <Edit size={18} />
                         </button>
                       </>
                     )}
-                    <button onClick={() => { localStorage.setItem('print_so', so.id); setActiveTab('invoice_so'); }} title="Cetak Invoice" className="text-blue-500 hover:text-blue-700 transition-colors p-2 relative z-10">
+                    <button 
+                      onClick={() => { localStorage.setItem('print_so', so.id); setActiveTab('invoice_so'); }} 
+                      title="Cetak Invoice" 
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors p-2 rounded-lg relative z-10"
+                    >
                       <FileText size={18} />
                     </button>
-                    <button onClick={() => handleDeleteSO(so.id)} title="Hapus SO" className="text-red-500 hover:text-red-700 transition-colors p-2">
+                    <button 
+                      onClick={() => handleDeleteSO(so.id)} 
+                      title="Hapus SO" 
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors p-2 rounded-lg"
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {filteredsalesOrders.length === 0 && (
               <tr>
-                <td colSpan="7" className="p-8 text-center text-gray-500">Belum ada transaksi Sales Order.</td>
+                <td colSpan="7" className="p-10 text-center text-gray-500">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Search size={32} className="text-gray-300" />
+                    <p className="font-semibold text-gray-600">Tidak ada transaksi Sales Order ditemukan.</p>
+                    <p className="text-xs text-gray-400">Silakan ubah filter status atau kata kunci pencarian.</p>
+                  </div>
+                </td>
               </tr>
             )}
           </tbody>
@@ -542,6 +810,23 @@ const SalesOrder = ({ setActiveTab }) => {
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col gap-6">
+              {/* Alert Banner if Customer has Outstanding SOs */}
+              {activeCustomerOutstanding.length > 0 && (
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3 text-rose-900 shadow-sm animate-fadeIn">
+                  <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 text-sm">
+                    <div className="font-bold flex items-center gap-2">
+                      <span>Status Otomatis Di-Hold: Onhold</span>
+                      <span className="text-xs bg-rose-200 text-rose-800 px-2 py-0.5 rounded-full font-bold">Terdeteksi Tunggakan</span>
+                    </div>
+                    <p className="text-xs text-rose-700 mt-1 leading-relaxed">
+                      Customer ini memiliki <b>{activeCustomerOutstanding.length} transaksi sebelumnya</b> yang masih outstanding / belum lunas ({activeCustomerOutstanding.map(o => `${o.soNumber} (${formatRp(o.total)})`).join(', ')}). 
+                      Sesuai aturan operasional, pesanan baru otomatis di-set ke <span className="font-bold uppercase tracking-wider bg-rose-200 px-1.5 py-0.5 rounded text-rose-900">Onhold</span> sampai tagihan sebelumnya diselesaikan.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="relative">
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Customer</label>
@@ -561,14 +846,14 @@ const SalesOrder = ({ setActiveTab }) => {
                         customerSuggestions.map(c => (
                           <li 
                             key={c.id} 
-                            className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-sm text-gray-800"
-                            onClick={() => {
-                              setCustomerInput(c.name);
-                              setSelectedCustomerId(c.id);
-                              setShowCustomerSuggestions(false);
-                            }}
+                            className="px-4 py-2.5 hover:bg-amber-50 cursor-pointer text-sm text-gray-800 border-b border-gray-50 last:border-0"
+                            onClick={() => handleSelectCustomer(c)}
                           >
-                            {c.name} ({c.type})
+                            <div className="font-semibold text-gray-900">{c.name}</div>
+                            <div className="text-xs text-gray-500 flex items-center gap-2">
+                              <span>Tipe: {c.type || 'Umum'}</span>
+                              <span>• Termin: {c.termin || 'Cash'}</span>
+                            </div>
                           </li>
                         ))
                       ) : (
@@ -593,12 +878,25 @@ const SalesOrder = ({ setActiveTab }) => {
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status Pembayaran</label>
                   <select 
                     required
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200"
-                    value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}
+                    className={`w-full border rounded-xl px-4 py-2.5 font-medium transition-all duration-200 ${
+                      formData.status === 'Onhold' 
+                        ? 'bg-rose-50 border-rose-300 text-rose-900 focus:ring-rose-500/20 focus:border-rose-500' 
+                        : formData.status === 'Lunas'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 focus:ring-emerald-500/20 focus:border-emerald-500'
+                        : 'bg-amber-50 border-amber-300 text-amber-900 focus:ring-amber-500/20 focus:border-amber-500'
+                    }`}
+                    value={formData.status} 
+                    onChange={e => setFormData({...formData, status: e.target.value})}
                   >
+                    <option value="Belum Lunas">Belum Lunas</option>
                     <option value="Lunas">Lunas</option>
-                    <option value="Pending">Pending (Belum Bayar)</option>
+                    <option value="Onhold">Onhold (Ditahan)</option>
                   </select>
+                  {activeCustomerOutstanding.length > 0 && formData.status !== 'Onhold' && (
+                    <p className="text-[10px] text-rose-600 font-semibold mt-1">
+                      *Customer menunggak SO sebelumnya
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Pajak</label>

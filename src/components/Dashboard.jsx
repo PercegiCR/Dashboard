@@ -197,6 +197,17 @@ const Dashboard = ({ setActiveTab }) => {
   const { customers, products, salesOrders, purchaseOrders } = useAppContext();
   const [period, setPeriod] = useState(7); // 1, 7, 30
 
+  const soStats = useMemo(() => {
+    let lunas = 0, belum = 0, hold = 0;
+    (salesOrders || []).forEach(so => {
+      const s = (so.status || '').toLowerCase();
+      if (s === 'lunas') lunas++;
+      else if (s === 'onhold' || s === 'on hold') hold++;
+      else belum++;
+    });
+    return { lunas, belum, hold };
+  }, [salesOrders]);
+
   // ── Build daily buckets for selected period ─────────────────────────────
   const { chartLabels, revenueData, expenseData, profitData, totalRevenue, totalExpense, totalProfit } = useMemo(() => {
     const start = daysAgo(period);
@@ -412,8 +423,13 @@ const Dashboard = ({ setActiveTab }) => {
             >
               <ShoppingCart size={60} className="absolute -right-4 -bottom-4 text-emerald-50 group-hover:scale-110 transition-transform duration-500" />
               <div className="relative z-10">
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Sales</p>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Sales Order</p>
                 <p className="text-2xl font-black text-gray-800">{salesOrders.length}</p>
+                <div className="flex flex-wrap gap-1 mt-1 text-[10px] font-bold">
+                  <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">{soStats.lunas} Lunas</span>
+                  <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{soStats.belum} Belum</span>
+                  {soStats.hold > 0 && <span className="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded">{soStats.hold} Hold</span>}
+                </div>
               </div>
             </div>
             <div 
@@ -450,8 +466,21 @@ const Dashboard = ({ setActiveTab }) => {
                     {trx.type === 'SO' ? <ClipboardList size={14} /> : <Truck size={14} />}
                   </div>
                   <div className="flex-1 pb-1">
-                    <p className="text-sm font-bold text-gray-900">{trx.type === 'SO' ? trx.soNumber : trx.poNumber}</p>
-                    <p className="text-xs text-gray-500 mb-1">{formatDate(trx.date)} • {trx.status}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-gray-900">{trx.type === 'SO' ? trx.soNumber : trx.poNumber}</p>
+                      {trx.type === 'SO' && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          (trx.status || '').toLowerCase() === 'lunas'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : (trx.status || '').toLowerCase() === 'onhold' || (trx.status || '').toLowerCase() === 'on hold'
+                            ? 'bg-rose-100 text-rose-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {trx.status || 'Belum Lunas'}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mb-1">{formatDate(trx.date)}</p>
                     <p className={`text-sm font-bold ${trx.type === 'SO' ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {trx.type === 'SO' ? '+' : '-'}{formatRp(trx.total)}
                     </p>

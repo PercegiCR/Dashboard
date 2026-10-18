@@ -99,19 +99,36 @@ const InvoiceSO = ({ setActiveTab }) => {
             <h2 className="text-4xl print:text-2xl font-black text-slate-200 mb-1 uppercase tracking-widest">INVOICE</h2>
             <p className="font-bold text-slate-800 print:text-sm">{so.soNumber}</p>
             <p className="text-slate-500 print:text-xs">Tanggal: {so.date}</p>
-            <div className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-              {so.status.toUpperCase()}
+            <div className={`mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold border ${
+              (so.status || '').toLowerCase() === 'lunas'
+                ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                : (so.status || '').toLowerCase() === 'onhold' || (so.status || '').toLowerCase() === 'on hold'
+                ? 'bg-rose-100 text-rose-700 border-rose-200'
+                : 'bg-amber-100 text-amber-700 border-amber-200'
+            }`}>
+              {(so.status || 'BELUM LUNAS').toUpperCase()}
             </div>
           </div>
         </div>
 
-        {/* Tagihan Kepada */}
-        <div className="flex justify-between mb-6 print:mb-3">
+        {/* Tagihan Kepada & Termin */}
+        <div className="flex justify-between items-start mb-6 print:mb-3">
           <div>
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tagihan Kepada:</h3>
             <p className="font-bold text-base print:text-sm text-slate-800">{customer?.name || 'Umum'}</p>
             <p className="text-slate-600 text-sm print:text-xs">{customer?.phone}</p>
             <p className="text-slate-600 text-sm print:text-xs max-w-xs">{customer?.address}</p>
+          </div>
+          <div className="text-right">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Termin Pembayaran:</h3>
+            <p className="font-bold text-sm text-slate-800 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200 inline-block">
+              {customer?.termin || 'Cash'}
+            </p>
+            {(so.status || '').toLowerCase() === 'onhold' && (
+              <p className="text-[11px] font-bold text-rose-600 mt-1">
+                *Pesanan Onhold (Ada tunggakan sebelumnya)
+              </p>
+            )}
           </div>
         </div>
 

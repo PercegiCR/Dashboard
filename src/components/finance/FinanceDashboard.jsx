@@ -1,27 +1,35 @@
 import React, { useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { TrendingUp, TrendingDown, Wallet, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Clock } from 'lucide-react';
 
 const FinanceDashboard = () => {
   const { salesOrders, purchaseOrders } = useAppContext();
 
   // Calculate totals
-  const { totalRevenue, totalExpense, profit } = useMemo(() => {
+  const { totalRevenue, totalExpense, profit, totalOutstanding, outstandingCount } = useMemo(() => {
     const revenue = salesOrders
-      .filter(so => so.status === 'Lunas')
-      .reduce((sum, so) => sum + so.total, 0);
+      .filter(so => (so.status || '').toLowerCase() === 'lunas')
+      .reduce((sum, so) => sum + (so.total || 0), 0);
 
-    const expense = purchaseOrders.reduce((sum, po) => sum + po.total, 0);
+    const expense = purchaseOrders.reduce((sum, po) => sum + (po.total || 0), 0);
+
+    const outstandingSOs = salesOrders.filter(so => {
+      const st = (so.status || '').toLowerCase();
+      return st === 'belum lunas' || st === 'pending' || st === 'onhold' || st === 'on hold';
+    });
+    const outstanding = outstandingSOs.reduce((sum, so) => sum + (so.total || 0), 0);
 
     return {
       totalRevenue: revenue,
       totalExpense: expense,
-      profit: revenue - expense
+      profit: revenue - expense,
+      totalOutstanding: outstanding,
+      outstandingCount: outstandingSOs.length
     };
   }, [salesOrders, purchaseOrders]);
 
   const formatRp = (angka) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
   };
 
   return (
@@ -29,13 +37,13 @@ const FinanceDashboard = () => {
       <div className="flex justify-between items-center mb-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Finance Dashboard</h1>
-          <p className="text-gray-500 mt-1">Ringkasan pendapatan dan pengeluaran secara real-time.</p>
+          <p className="text-gray-500 mt-1">Ringkasan pendapatan, piutang tertunggak (Belum Lunas/Onhold), dan pengeluaran.</p>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg p-6 shadow-md relative overflow-hidden group border border-gray-100 hover:border-emerald-200 transition-colors">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow-md relative overflow-hidden group border border-gray-100 hover:border-emerald-200 transition-colors">
           <div className="absolute -right-6 -top-6 text-emerald-50 group-hover:text-emerald-100 transition-colors">
             <TrendingUp size={120} />
           </div>
@@ -43,10 +51,22 @@ const FinanceDashboard = () => {
             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><TrendingUp size={24} /></div>
             Total Pendapatan (Lunas)
           </div>
-          <div className="text-3xl font-bold text-gray-900 relative z-10">{formatRp(totalRevenue)}</div>
+          <div className="text-2xl font-black text-gray-900 relative z-10">{formatRp(totalRevenue)}</div>
         </div>
 
-        <div className="bg-white rounded-lg p-6 shadow-md relative overflow-hidden group border border-gray-100 hover:border-rose-200 transition-colors">
+        <div className="bg-white rounded-2xl p-6 shadow-md relative overflow-hidden group border border-gray-100 hover:border-amber-200 transition-colors">
+          <div className="absolute -right-6 -top-6 text-amber-50 group-hover:text-amber-100 transition-colors">
+            <Clock size={120} />
+          </div>
+          <div className="flex items-center gap-3 text-gray-500 mb-2 font-medium relative z-10">
+            <div className="p-2 bg-amber-50 rounded-lg text-amber-600"><Clock size={24} /></div>
+            Piutang Belum Lunas / Onhold
+          </div>
+          <div className="text-2xl font-black text-amber-700 relative z-10">{formatRp(totalOutstanding)}</div>
+          <p className="text-xs text-amber-600 mt-1 relative z-10 font-semibold">{outstandingCount} transaksi outstanding</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-md relative overflow-hidden group border border-gray-100 hover:border-rose-200 transition-colors">
           <div className="absolute -right-6 -top-6 text-rose-50 group-hover:text-rose-100 transition-colors">
             <TrendingDown size={120} />
           </div>
@@ -54,20 +74,20 @@ const FinanceDashboard = () => {
             <div className="p-2 bg-rose-50 rounded-lg text-rose-600"><TrendingDown size={24} /></div>
             Total Pengeluaran (PO)
           </div>
-          <div className="text-3xl font-bold text-gray-900 relative z-10">{formatRp(totalExpense)}</div>
+          <div className="text-2xl font-black text-gray-900 relative z-10">{formatRp(totalExpense)}</div>
         </div>
 
-        <div className={`bg-white rounded-lg p-6 shadow-md relative overflow-hidden group border border-gray-100 transition-colors ${profit >= 0 ? 'hover:border-amber-200' : 'hover:border-rose-200'}`}>
-          <div className={`absolute -right-6 -top-6 transition-colors ${profit >= 0 ? 'text-amber-50 group-hover:text-amber-100' : 'text-rose-50 group-hover:text-rose-100'}`}>
+        <div className={`bg-white rounded-2xl p-6 shadow-md relative overflow-hidden group border border-gray-100 transition-colors ${profit >= 0 ? 'hover:border-blue-200' : 'hover:border-rose-200'}`}>
+          <div className={`absolute -right-6 -top-6 transition-colors ${profit >= 0 ? 'text-blue-50 group-hover:text-blue-100' : 'text-rose-50 group-hover:text-rose-100'}`}>
             <Wallet size={120} />
           </div>
           <div className="flex items-center gap-3 text-gray-500 mb-2 font-medium relative z-10">
-            <div className={`p-2 rounded-lg ${profit >= 0 ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+            <div className={`p-2 rounded-lg ${profit >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>
               <DollarSign size={24} />
             </div>
-            Laba/Rugi Kotor
+            Laba/Rugi Bersih
           </div>
-          <div className={`text-3xl font-bold relative z-10 ${profit >= 0 ? 'text-amber-600' : 'text-rose-600'}`}>
+          <div className={`text-2xl font-black relative z-10 ${profit >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
             {formatRp(profit)}
           </div>
         </div>
