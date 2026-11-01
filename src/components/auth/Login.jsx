@@ -7,19 +7,22 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
-    if (!username || !password) {
+    if (!username.trim() || !password) {
       setError('Username dan password harus diisi');
       return;
     }
 
-    const result = login(username, password);
-    if (!result.success) {
-      setError(result.message);
+    setIsSubmitting(true);
+    try {
+      const result = await login(username, password);
+      if (!result.success) setError(result.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -78,10 +81,11 @@ const Login = () => {
             
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2.5 rounded-xl transition-colors shadow-sm mt-2"
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white font-medium py-2.5 rounded-xl transition-colors shadow-sm mt-2"
             >
               <LogIn className="w-5 h-5" />
-              Masuk
+              {isSubmitting ? 'Memeriksa akun...' : 'Masuk'}
             </button>
           </form>
         </div>

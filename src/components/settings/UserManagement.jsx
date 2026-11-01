@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { collection, deleteDoc, deleteField, doc, getDocs, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { hashUserPassword } from '../../utils/userCredentials';
 import { Plus, Search, UserCheck, Shield, Trash2, Edit2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
@@ -16,26 +19,60 @@ const UserManagement = () => {
     password: '',
     roleId: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    loadData();
+    let unsubscribe;
+    const startListening = async () => {
+      try {
+        let storedRoles = [];
+        try {
+          storedRoles = JSON.parse(localStorage.getItem('roles') || '[]');
+        } catch {
+          storedRoles = [];
+        }
+        if (storedRoles.length === 0) storedRoles = [{ id: '1', name: 'administration', access: ['all'] }];
+        setRoles(storedRoles);
+        unsubscribe = onSnapshot(collection(db, 'users'), snapshot => {
+          const firebaseUsers = snapshot.docs.map(userDoc => {
+            const user = { id: userDoc.id, ...userDoc.data() };
+            delete user.password;
+            delete user.passwordHash;
+            delete user.passwordSalt;
+            delete user.passwordIterations;
+            return user;
+          });
+          setUsers(firebaseUsers);
+          const firebaseRoles = firebaseUsers
+            .filter(user => user.roleId && user.roleName)
+            .map(user => ({ id: String(user.roleId), name: user.roleName, access: user.roleAccess || [] }));
+          const mergedRoles = [...storedRoles];
+          firebaseRoles.forEach(role => {
+            if (!mergedRoles.some(existing => String(existing.id) === role.id)) mergedRoles.push(role);
+          });
+          setRoles(mergedRoles);
+        }, error => {
+          console.error('Failed to load Firebase users:', error);
+          Swal.fire('Gagal memuat user', 'Periksa koneksi dan aturan akses Firestore.', 'error');
+        });
+      } catch (error) {
+        console.error('Failed to initialize user list:', error);
+        Swal.fire('Gagal memuat user', error.message || 'Periksa koneksi Firebase.', 'error');
+      }
+    };
+    startListening();
+    return () => unsubscribe?.();
   }, []);
-
-  const loadData = () => {
-    const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
-    const storedRoles = JSON.parse(localStorage.getItem('roles')) || [];
-    setUsers(storedUsers);
-    setRoles(storedRoles);
-  };
 
   const handleOpenModal = (user = null) => {
     if (user) {
       setEditingId(user.id);
       setFormData({
-        name: user.name,
-        username: user.username,
-        password: user.password,
-        roleId: user.roleId
+        name: user.name || '',
+        username: user.username || '',
+        password: '',
+        roleId: String(user.roleId || '')
       });
     } else {
       setEditingId(null);
@@ -43,7 +80,7 @@ const UserManagement = () => {
         name: '',
         username: '',
         password: '',
-        roleId: roles.length > 0 ? roles[0].id : ''
+        roleId: roles.length > 0 ? String(roles[0].id) : ''
       });
     }
     setIsModalOpen(true);
@@ -54,62 +91,91 @@ const UserManagement = () => {
     setEditingId(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.username || !formData.password || !formData.roleId) {
-      Swal.fire('Perhatian', 'Semua field harus diisi!', 'warning');
+    const name = formData.name.trim();
+    const username = formData.username.trim().toLowerCase();
+    const role = roles.find(item => String(item.id) === String(formData.roleId));
+    if (!name || !username || (!editingId && !formData.password) || !role) {
+      Swal.fire('Perhatian', 'Nama, username, role, dan password akun baru wajib diisi.', 'warning');
       return;
     }
 
-    let updatedUsers;
-    if (editingId) {
-      updatedUsers = users.map(u => u.id === editingId ? { ...u, ...formData } : u);
-    } else {
-      const newUser = {
-        id: Date.now().toString(),
-        ...formData,
-        profilePic: null
+    setIsSaving(true);
+    try {
+      const duplicateSnapshot = await getDocs(collection(db, 'users'));
+      if (duplicateSnapshot.docs.some(userDoc =>
+        userDoc.id !== editingId && String(userDoc.data().username || '').trim().toLowerCase() === username
+      )) {
+        Swal.fire('Username sudah digunakan', 'Silakan gunakan username lain.', 'warning');
+        return;
+      }
+
+      const userRef = editingId ? doc(db, 'users', editingId) : doc(collection(db, 'users'));
+      const userData = {
+        name,
+        username,
+        roleId: String(role.id),
+        roleName: role.name,
+        roleAccess: Array.isArray(role.access) ? role.access : [],
+        ...(editingId ? {} : { profilePic: null, createdAt: new Date().toISOString() })
       };
-      updatedUsers = [...users, newUser];
+      if (formData.password) {
+        Object.assign(userData, await hashUserPassword(formData.password));
+        if (editingId) userData.password = deleteField();
+      }
+
+      if (editingId) await updateDoc(userRef, userData);
+      else await setDoc(userRef, userData);
+
+      handleCloseModal();
+      await Swal.fire('Berhasil', `Akun ${editingId ? 'diperbarui' : 'ditambahkan'} di Firebase.`, 'success');
+    } catch (error) {
+      console.error('Failed to save Firebase user:', error);
+      Swal.fire('Gagal menyimpan user', error.message || 'Periksa koneksi dan aturan akses Firestore.', 'error');
+    } finally {
+      setIsSaving(false);
     }
-    
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    handleCloseModal();
   };
 
   const handleDelete = (id) => {
+    if (id === currentUser?.id) {
+      Swal.fire('Tidak dapat dihapus', 'Anda tidak dapat menghapus akun yang sedang digunakan.', 'warning');
+      return;
+    }
     if (users.length === 1) {
       Swal.fire('Gagal', 'Tidak bisa menghapus user terakhir.', 'error');
       return;
     }
     Swal.fire({
       title: 'Hapus User?',
-      text: "Apakah Anda yakin ingin menghapus user ini?",
+      text: 'Akun ini akan dihapus permanen dari Firebase.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#6b7280',
       confirmButtonText: 'Ya, hapus!',
       cancelButtonText: 'Batal'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const updatedUsers = users.filter(u => u.id !== id);
-        setUsers(updatedUsers);
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
-        Swal.fire('Terhapus!', 'User berhasil dihapus.', 'success');
+    }).then(async result => {
+      if (!result.isConfirmed) return;
+      try {
+        await deleteDoc(doc(db, 'users', id));
+        await Swal.fire('Terhapus!', 'Akun berhasil dihapus dari Firebase.', 'success');
+      } catch (error) {
+        console.error('Failed to delete Firebase user:', error);
+        Swal.fire('Gagal menghapus user', error.message || 'Periksa koneksi dan aturan akses Firestore.', 'error');
       }
     });
   };
 
   const getRoleName = (roleId) => {
-    const role = roles.find(r => r.id === roleId);
+    const role = roles.find(r => String(r.id) === String(roleId));
     return role ? role.name : 'Unknown';
   };
 
   const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.username.toLowerCase().includes(searchTerm.toLowerCase())
+    String(u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(u.username || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -247,12 +313,12 @@ const UserManagement = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
-                  type="text"
+                  type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                  placeholder="Masukkan password"
-                  required
+                  placeholder={editingId ? 'Kosongkan jika tidak diubah' : 'Masukkan password'}
+                  required={!editingId}
                 />
               </div>
 
@@ -281,9 +347,10 @@ const UserManagement = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2.5 text-white bg-amber-600 hover:bg-amber-700 rounded-xl font-medium transition-colors shadow-sm"
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2.5 text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-60 rounded-xl font-medium transition-colors shadow-sm"
                 >
-                  Simpan User
+                  {isSaving ? 'Menyimpan...' : 'Simpan User'}
                 </button>
               </div>
             </form>

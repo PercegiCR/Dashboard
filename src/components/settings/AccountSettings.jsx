@@ -34,7 +34,7 @@ const AccountSettings = () => {
     }
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
@@ -49,10 +49,14 @@ const AccountSettings = () => {
     if (formData.password) updates.password = formData.password;
 
     if (Object.keys(updates).length > 0) {
-      updateProfile(updates);
-      setSuccessMsg('Profil berhasil diperbarui!');
-      setFormData({ password: '', confirmPassword: '' });
-      setTimeout(() => setSuccessMsg(''), 3000);
+      try {
+        await updateProfile(updates);
+        setSuccessMsg('Profil berhasil diperbarui!');
+        setFormData({ password: '', confirmPassword: '' });
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } catch (error) {
+        setErrorMsg(error.message || 'Gagal memperbarui profil di Firebase.');
+      }
     }
   };
 

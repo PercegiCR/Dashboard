@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase';
 import { Plus, Search, Shield, Trash2, Edit2, X, CheckSquare } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -113,37 +115,40 @@ const RoleManagement = () => {
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (id === '1') {
+  const handleDelete = async (id) => {
+    if (String(id) === '1') {
       Swal.fire('Gagal', "Role 'administration' adalah role default dan tidak bisa dihapus.", 'error');
       return;
     }
-    
-    // Check if role is used by any user
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const isUsed = users.some(u => u.roleId === id);
-    if (isUsed) {
-      Swal.fire('Gagal', "Role ini sedang digunakan oleh user aktif. Silakan ubah role user tersebut terlebih dahulu.", 'error');
-      return;
-    }
 
-    Swal.fire({
-      title: 'Hapus Role?',
-      text: "Apakah Anda yakin ingin menghapus role ini?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Ya, hapus!',
-      cancelButtonText: 'Batal'
-    }).then((result) => {
+    try {
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const isUsed = usersSnapshot.docs.some(userDoc => String(userDoc.data().roleId) === String(id));
+      if (isUsed) {
+        Swal.fire('Gagal', 'Role ini sedang digunakan oleh akun Firebase. Ubah role akun tersebut terlebih dahulu.', 'error');
+        return;
+      }
+
+      const result = await Swal.fire({
+        title: 'Hapus Role?',
+        text: 'Apakah Anda yakin ingin menghapus role ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+      });
       if (result.isConfirmed) {
-        const updatedRoles = roles.filter(r => r.id !== id);
+        const updatedRoles = roles.filter(role => String(role.id) !== String(id));
         setRoles(updatedRoles);
         localStorage.setItem('roles', JSON.stringify(updatedRoles));
-        Swal.fire('Terhapus!', 'Role berhasil dihapus.', 'success');
+        await Swal.fire('Terhapus!', 'Role berhasil dihapus.', 'success');
       }
-    });
+    } catch (error) {
+      console.error('Failed to check Firebase role usage:', error);
+      Swal.fire('Gagal', error.message || 'Tidak dapat memeriksa pemakaian role di Firebase.', 'error');
+    }
   };
 
   const filteredRoles = roles.filter(r => 
