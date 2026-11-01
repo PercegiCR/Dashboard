@@ -9,6 +9,7 @@ export const TAB_TO_PATH = {
   customer: '/customers',
   vendor: '/vendors',
   finance: '/finance',
+  production: '/production',
   invoice_so: '/invoices/sales',
   invoice_po: '/invoices/purchase',
   settings_category: '/settings/categories',

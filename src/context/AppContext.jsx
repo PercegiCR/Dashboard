@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, setDoc, runTransaction } from 'firebase/firestore';
 
 const AppContext = createContext();
 
@@ -75,8 +75,10 @@ export const AppProvider = ({ children }) => {
     bankName: 'BCA',
     bankAccountNumber: '',
     bankAccountName: 'Percegi Coffee Roastery',
-    paymentNotes: 'Pembayaran dapat ditransfer melalui rekening resmi berikut:'
+    paymentNotes: 'Pembayaran dapat ditransfer melalui rekening resmi berikut:',
+    qrisImageUrl: ''
   });
+  const [productionNotifications, setProductionNotifications] = useState([]);
 
   useEffect(() => {
     const unsubVendors = onSnapshot(collection(db, 'vendors'), snap => {
@@ -105,6 +107,9 @@ export const AppProvider = ({ children }) => {
         setSettings(prev => ({ ...prev, ...docSnap.data() }));
       }
     });
+    const unsubProductionNotifications = onSnapshot(collection(db, 'productionNotifications'), snap => {
+      setProductionNotifications(snap.docs.map(item => ({ id: item.id, ...item.data() })));
+    });
 
     return () => {
       unsubVendors();
@@ -115,6 +120,7 @@ export const AppProvider = ({ children }) => {
       unsubSalesOrders();
       unsubPurchaseOrders();
       unsubSettings();
+      unsubProductionNotifications();
     };
   }, []);
 
@@ -237,31 +243,105 @@ export const AppProvider = ({ children }) => {
   const addSalesOrder = useCallback(async (so) => {
     const { id: _id, ...rest } = so;
     const newSoNumber = generateOrderNumber('SO', salesOrders, 'soNumber');
-    
-    try {
-      const batch = writeBatch(db);
-      
-      // Add order
-      const newOrderRef = doc(collection(db, 'salesOrders'));
-      batch.set(newOrderRef, { soNumber: newSoNumber, date: new Date().toISOString().split('T')[0], ...rest });
-      
-      // Deduct product stock
-      so.items.forEach(item => {
-        const prod = products.find(p => p.id === item.productId);
-        if (prod) {
-          const prodRef = doc(db, 'products', prod.id);
-          batch.update(prodRef, { stock: (prod.stock || 0) - item.qty });
-        }
-      });
-      
-      await batch.commit();
-    } catch (e) {
-      console.error(e);
-    }
+    const outstandingOrders = salesOrders.filter(order =>
+      order.customerId === so.customerId &&
+      ['belum lunas', 'pending', 'onhold', 'on hold'].includes(String(order.status || '').trim().toLowerCase())
+    );
+    const customerHasOutstanding = outstandingOrders.length > 0;
+    const newOrderRef = doc(collection(db, 'salesOrders'));
+    const batch = writeBatch(db);
+    batch.set(newOrderRef, {
+      soNumber: newSoNumber,
+      date: new Date().toISOString().split('T')[0],
+      ...rest,
+      status: customerHasOutstanding ? 'Onhold' : 'Belum Lunas',
+      ...(customerHasOutstanding ? { holdReasonSOIds: outstandingOrders.map(order => order.id) } : {}),
+      approvalStatus: 'Menunggu Finance',
+      approvalCreatedAt: new Date().toISOString()
+    });
+
+    so.items.forEach(item => {
+      const prod = products.find(p => p.id === item.productId);
+      if (prod) {
+        batch.update(doc(db, 'products', prod.id), { stock: (prod.stock || 0) - item.qty });
+      }
+    });
+    await batch.commit();
+    return newOrderRef.id;
   }, [salesOrders, products]);
 
-  const updateSalesOrder = useCallback(async (id, so) => {
-    await updateDoc(doc(db, 'salesOrders', id), so);
+  const updateSalesOrder = useCallback(async (id, updates) => {
+    const orderRef = doc(db, 'salesOrders', id);
+    await runTransaction(db, async transaction => {
+      const orderSnapshot = await transaction.get(orderRef);
+      if (!orderSnapshot.exists()) throw new Error('Sales Order tidak ditemukan.');
+      const current = orderSnapshot.data();
+      const updated = { ...current, ...updates };
+      if (updates.status === 'Lunas' && current.holdReasonSOIds?.length) {
+        const prerequisiteSnapshots = await Promise.all(current.holdReasonSOIds.map(orderId => transaction.get(doc(db, 'salesOrders', orderId))));
+        const hasUnpaidPrerequisite = prerequisiteSnapshots.some(snapshot => {
+          if (!snapshot.exists()) return false;
+          const status = String(snapshot.data().status || '').trim().toLowerCase();
+          return ['belum lunas', 'pending', 'onhold', 'on hold'].includes(status);
+        });
+        if (hasUnpaidPrerequisite) throw new Error('SO ini masih ditahan karena ada SO sebelumnya yang belum lunas. Lunasi SO pemicu hold terlebih dahulu.');
+      }
+      const isApproved = updated.approvalStatus === 'Disetujui';
+      const shouldNotifyProduction = updated.status === 'Lunas' && isApproved && !current.productionNotifiedAt;
+      const notificationRef = shouldNotifyProduction ? doc(collection(db, 'productionNotifications')) : null;
+      transaction.update(orderRef, {
+        ...updates,
+        ...(shouldNotifyProduction ? { productionNotifiedAt: new Date().toISOString() } : {})
+      });
+      if (notificationRef) {
+        transaction.set(notificationRef, {
+          salesOrderId: id,
+          soNumber: current.soNumber || id,
+          customerId: current.customerId || '',
+          items: current.items || [],
+          status: 'Baru',
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
+  }, [salesOrders]);
+
+  const reviewSalesOrder = useCallback(async (id, decision, reviewer, note = '') => {
+    if (!['Disetujui', 'Ditolak'].includes(decision)) throw new Error('Keputusan approval tidak valid.');
+    const orderRef = doc(db, 'salesOrders', id);
+    await runTransaction(db, async transaction => {
+      const snapshot = await transaction.get(orderRef);
+      if (!snapshot.exists()) throw new Error('Sales Order tidak ditemukan.');
+      const current = snapshot.data();
+      if (current.approvalStatus && current.approvalStatus !== 'Menunggu Finance') {
+        throw new Error('Sales Order ini sudah diproses oleh Finance.');
+      }
+      const now = new Date().toISOString();
+      const patch = {
+        approvalStatus: decision,
+        approvalBy: reviewer || 'Finance',
+        approvalAt: now,
+        approvalNote: decision === 'Ditolak' ? note : ''
+      };
+      const notify = decision === 'Disetujui' && current.status === 'Lunas' && !current.productionNotifiedAt;
+      if (notify) patch.productionNotifiedAt = now;
+      transaction.update(orderRef, patch);
+      if (notify) {
+        const notificationRef = doc(collection(db, 'productionNotifications'));
+        transaction.set(notificationRef, {
+          salesOrderId: id,
+          soNumber: current.soNumber || id,
+          customerId: current.customerId || '',
+          items: current.items || [],
+          status: 'Baru',
+          createdAt: now
+        });
+      }
+    });
+  }, []);
+
+  const updateProductionNotification = useCallback(async (id, status) => {
+    await updateDoc(doc(db, 'productionNotifications', id), { status });
   }, []);
   const deleteSalesOrder = useCallback(async (id) => {
     const so = salesOrders.find(s => s.id === id);
@@ -359,7 +439,8 @@ export const AppProvider = ({ children }) => {
     inventory, addInventory, updateInventory, deleteInventory,
     products, addProduct, updateProduct, deleteProduct, produceProduct,
     categories, addCategory, updateCategory, deleteCategory,
-    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
+    salesOrders, addSalesOrder, updateSalesOrder, reviewSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
+    productionNotifications, updateProductionNotification,
     purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
   }), [
     settings, updateSettings,
@@ -368,7 +449,8 @@ export const AppProvider = ({ children }) => {
     inventory, addInventory, updateInventory, deleteInventory,
     products, addProduct, updateProduct, deleteProduct, produceProduct,
     categories, addCategory, updateCategory, deleteCategory,
-    salesOrders, addSalesOrder, updateSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
+    salesOrders, addSalesOrder, updateSalesOrder, reviewSalesOrder, deleteSalesOrder, importHistoricalSalesOrders,
+    productionNotifications, updateProductionNotification,
     purchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder
   ]);
 

@@ -3,6 +3,7 @@ import { useAppContext } from '../../context/AppContext';
 import { Plus, X, ShoppingCart, Check, FileText, Edit, Trash2, Search, CheckCircle2, Clock, Lock, AlertCircle, AlertTriangle } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { formatRp, getProductSizes, getSizePrice, getProductPriceDisplay } from '../../utils/productUtils';
+import { useAuth } from '../../context/AuthContext';
 
 export const normalizeStatus = (status) => {
   if (!status) return 'Belum Lunas';
@@ -16,6 +17,8 @@ export const normalizeStatus = (status) => {
 
 const SalesOrder = ({ setActiveTab }) => {
   const { salesOrders, customers, products, categories, addSalesOrder, updateSalesOrder, deleteSalesOrder, addCustomer, importHistoricalSalesOrders } = useAppContext();
+  const { currentUser, hasAccess } = useAuth();
+  const canEditSO = hasAccess('so');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
@@ -302,15 +305,19 @@ const SalesOrder = ({ setActiveTab }) => {
 
     // Requirement 3: SO ke hold diliat dari history pembayaran kalo masih outstanding/belum lunas dari SO sebelumnya
     let finalStatus = formData.status;
-    if (finalStatus !== 'Lunas') {
-      const outstanding = getCustomerOutstandingSOs(finalCustomerId, formData.id);
-      if (outstanding.length > 0) {
-        finalStatus = 'Onhold';
-      }
+    const outstanding = getCustomerOutstandingSOs(finalCustomerId, formData.id);
+    if (outstanding.length > 0) {
+      finalStatus = 'Onhold';
+    }
+
+    if (formData.id && finalStatus === 'Lunas') {
+      Swal.fire('Gunakan konfirmasi pembayaran', 'Status Lunas hanya dapat dicatat melalui aksi Tandai Lunas pada daftar SO.', 'info');
+      return;
     }
 
     const dataToSave = {
       customerId: finalCustomerId,
+      approvalStatus: 'Menunggu Finance',
       date: formData.date,
       items: formData.items,
       subtotal: getSubtotal(),
@@ -323,26 +330,39 @@ const SalesOrder = ({ setActiveTab }) => {
       status: finalStatus
     };
     
-    if (formData.id) {
-      updateSalesOrder(formData.id, dataToSave);
-      Swal.fire('Berhasil!', 'Sales Order berhasil diperbarui.', 'success');
-    } else {
-      addSalesOrder(dataToSave);
-      if (finalStatus === 'Onhold') {
-        Swal.fire({
-          title: 'Pesanan Dibuat (Onhold)',
-          text: 'Sales Order disimpan dengan status Onhold karena customer memiliki riwayat tagihan yang belum lunas.',
-          icon: 'warning',
-          confirmButtonColor: '#f59e0b'
-        });
+    try {
+      if (formData.id) {
+        await updateSalesOrder(formData.id, dataToSave);
+        await Swal.fire('Berhasil!', 'Sales Order diperbarui dan dikirim ulang untuk approval Finance.', 'success');
       } else {
-        Swal.fire('Berhasil!', 'Sales Order baru berhasil dibuat.', 'success');
+        await addSalesOrder(dataToSave);
+        if (finalStatus === 'Onhold') {
+          await Swal.fire({
+            title: 'Pesanan Dibuat (Onhold)',
+            text: 'SO ditahan karena customer memiliki tagihan sebelumnya yang belum lunas dan menunggu approval Finance.',
+            icon: 'warning',
+            confirmButtonColor: '#f59e0b'
+          });
+        } else {
+          await Swal.fire('Berhasil!', 'Sales Order baru berhasil dibuat dan dikirim ke Finance.', 'success');
+        }
       }
+      setIsModalOpen(false);
+    } catch (error) {
+      Swal.fire('Gagal', error.message || 'Sales Order gagal disimpan.', 'error');
     }
-    setIsModalOpen(false);
   };
 
   const markAsLunas = (id) => {
+    const order = salesOrders.find(item => item.id === id);
+    const unpaidPrerequisites = (order?.holdReasonSOIds || []).filter(orderId => {
+      const prerequisite = salesOrders.find(item => item.id === orderId);
+      return prerequisite && ['Belum Lunas', 'Onhold'].includes(normalizeStatus(prerequisite.status));
+    });
+    if (unpaidPrerequisites.length > 0) {
+      Swal.fire('Tidak dapat diproses', 'SO ini masih ditahan oleh SO sebelumnya. Lunasi SO yang lebih lama terlebih dahulu.', 'warning');
+      return;
+    }
     Swal.fire({
       title: 'Tandai Sebagai Lunas?',
       text: 'Status Sales Order akan diubah menjadi Lunas.',
@@ -354,8 +374,13 @@ const SalesOrder = ({ setActiveTab }) => {
       cancelButtonText: 'Batal'
     }).then((res) => {
       if (res.isConfirmed) {
-        updateSalesOrder(id, { status: 'Lunas' });
-        Swal.fire('Berhasil!', 'Status SO telah diubah menjadi Lunas.', 'success');
+        updateSalesOrder(id, {
+          status: 'Lunas',
+          paymentConfirmedAt: new Date().toISOString(),
+          paymentConfirmedBy: currentUser?.name || currentUser?.username || 'User'
+        }).then(() => {
+          Swal.fire('Berhasil!', 'Pembayaran SO dicatat Lunas.', 'success');
+        }).catch(error => Swal.fire('Gagal', error.message || 'Status pembayaran gagal diperbarui.', 'error'));
       }
     });
   };
@@ -721,6 +746,7 @@ const SalesOrder = ({ setActiveTab }) => {
                   ) : null}
                 </td>
                 <td className="p-4">
+                  <div className="flex flex-col items-start gap-1">
                   {normStatus === 'Lunas' ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm">
                       <CheckCircle2 size={13} className="text-emerald-600" />
@@ -740,10 +766,12 @@ const SalesOrder = ({ setActiveTab }) => {
                       Belum Lunas
                     </span>
                   )}
+                  {so.approvalStatus && <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${so.approvalStatus === 'Disetujui' ? 'bg-sky-100 text-sky-700' : so.approvalStatus === 'Ditolak' ? 'bg-rose-100 text-rose-700' : 'bg-violet-100 text-violet-700'}`}>Finance: {so.approvalStatus}</span>}
+                  </div>
                 </td>
                 <td className="p-4">
                   <div className="flex justify-end gap-1.5">
-                    {normStatus !== 'Lunas' && (
+                    {canEditSO && normStatus !== 'Lunas' && (
                       <>
                         <button 
                           onClick={() => markAsLunas(so.id)} 
@@ -768,13 +796,13 @@ const SalesOrder = ({ setActiveTab }) => {
                     >
                       <FileText size={18} />
                     </button>
-                    <button 
+                    {canEditSO && <button
                       onClick={() => handleDeleteSO(so.id)} 
                       title="Hapus SO" 
                       className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors p-2 rounded-lg"
                     >
                       <Trash2 size={18} />
-                    </button>
+                    </button>}
                   </div>
                 </td>
               </tr>

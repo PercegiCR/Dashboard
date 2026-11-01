@@ -1,9 +1,37 @@
 import React, { useMemo } from 'react';
+import Swal from 'sweetalert2';
 import { useAppContext } from '../../context/AppContext';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Clock, Check, X } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const FinanceDashboard = () => {
-  const { salesOrders, purchaseOrders } = useAppContext();
+  const { salesOrders, purchaseOrders, reviewSalesOrder } = useAppContext();
+  const { currentUser, hasAccess } = useAuth();
+  const canApprove = hasAccess('finance');
+  const pendingApprovals = salesOrders.filter(so => so.approvalStatus === 'Menunggu Finance');
+  const handleReview = async (so, decision) => {
+    let note = '';
+    if (decision === 'Ditolak') {
+      const result = await Swal.fire({
+        title: 'Tolak Sales Order?',
+        input: 'textarea',
+        inputLabel: 'Alasan penolakan',
+        inputPlaceholder: 'Tuliskan alasan agar dapat ditindaklanjuti',
+        inputValidator: value => value?.trim() ? undefined : 'Alasan penolakan wajib diisi.',
+        showCancelButton: true,
+        confirmButtonText: 'Tolak SO',
+        cancelButtonText: 'Batal'
+      });
+      if (!result.isConfirmed) return;
+      note = result.value.trim();
+    }
+    try {
+      await reviewSalesOrder(so.id, decision, currentUser?.name || currentUser?.username || 'Finance', note);
+      await Swal.fire('Berhasil', `SO ${decision.toLowerCase()}.`, 'success');
+    } catch (error) {
+      Swal.fire('Gagal', error.message || 'Gagal memproses approval SO.', 'error');
+    }
+  };
 
   // Calculate totals
   const { totalRevenue, totalExpense, profit, totalOutstanding, outstandingCount } = useMemo(() => {
@@ -40,6 +68,34 @@ const FinanceDashboard = () => {
           <p className="text-gray-500 mt-1">Ringkasan pendapatan, piutang tertunggak (Belum Lunas/Onhold), dan pengeluaran.</p>
         </div>
       </div>
+
+      <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Approval Sales Order</h2>
+            <p className="text-sm text-gray-500">SO menunggu keputusan Finance</p>
+          </div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-800">{pendingApprovals.length} menunggu</span>
+        </div>
+        <div className="space-y-3">
+          {pendingApprovals.map(so => (
+            <article key={so.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-100 p-4">
+              <div>
+                <p className="font-bold text-gray-900">{so.soNumber}</p>
+                <p className="text-sm text-gray-500">{so.date} · {formatRp(so.total)} · Pembayaran: {so.status || 'Belum Lunas'}{so.status === 'Onhold' ? ' (perlu cek piutang customer)' : ''}</p>
+                {so.approvalStatus === 'Ditolak' && <p className="text-xs text-rose-600">Ditolak: {so.approvalNote || 'Perlu revisi'}</p>}
+              </div>
+              {canApprove ? (
+                <div className="flex gap-2">
+                  <button onClick={() => handleReview(so, 'Disetujui')} className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"><Check size={16}/> Setujui</button>
+                  <button onClick={() => handleReview(so, 'Ditolak')} className="flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700"><X size={16}/> Tolak</button>
+                </div>
+              ) : <span className="text-xs text-gray-400">Tidak memiliki akses approval</span>}
+            </article>
+          ))}
+          {pendingApprovals.length === 0 && <p className="py-5 text-center text-sm text-gray-400">Tidak ada SO menunggu approval.</p>}
+        </div>
+      </section>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

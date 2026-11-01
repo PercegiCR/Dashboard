@@ -13,6 +13,7 @@ const ProductData = lazy(() => import('./components/master/ProductData'));
 const SalesOrder = lazy(() => import('./components/orders/SalesOrder'));
 const PurchaseOrder = lazy(() => import('./components/orders/PurchaseOrder'));
 const FinanceDashboard = lazy(() => import('./components/finance/FinanceDashboard'));
+const ProductionQueue = lazy(() => import('./components/production/ProductionQueue'));
 const InvoiceSO = lazy(() => import('./components/invoice/InvoiceSO'));
 const InvoicePO = lazy(() => import('./components/invoice/InvoicePO'));
 const InvoiceSettings = lazy(() => import('./components/settings/InvoiceSettings'));
@@ -48,6 +49,8 @@ function App() {
         return <PurchaseOrder setActiveTab={setActiveTab} />;
       case 'finance':
         return <FinanceDashboard />;
+      case 'production':
+        return <ProductionQueue />;
       case 'invoice_so':
         return <InvoiceSO setActiveTab={setActiveTab} />;
       case 'invoice_po':

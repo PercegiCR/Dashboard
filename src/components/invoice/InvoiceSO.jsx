@@ -247,6 +247,12 @@ const InvoiceSO = ({ setActiveTab }) => {
               </p>
             </div>
           )}
+          {settings?.qrisImageUrl && (
+            <div className="mt-4 border-t border-slate-200 pt-3 text-center print-break-avoid">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-700">Pembayaran dengan QRIS</p>
+              <img src={settings.qrisImageUrl} alt="QRIS pembayaran" className="mx-auto h-36 w-36 rounded-lg border border-slate-200 object-contain print:h-32 print:w-32" />
+            </div>
+          )}
         </div>
 
         {/* Footer Invoice */}

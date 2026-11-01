@@ -12,7 +12,8 @@ const InvoiceSettings = () => {
     bankName: 'BCA',
     bankAccountNumber: '',
     bankAccountName: '',
-    paymentNotes: 'Pembayaran dapat ditransfer melalui rekening resmi berikut:'
+    paymentNotes: 'Pembayaran dapat ditransfer melalui rekening resmi berikut:',
+    qrisImageUrl: ''
   });
   const [saveStatus, setSaveStatus] = useState('');
 
@@ -26,7 +27,8 @@ const InvoiceSettings = () => {
         bankName: settings.bankName || 'BCA',
         bankAccountNumber: settings.bankAccountNumber || '',
         bankAccountName: settings.bankAccountName || settings.shopName || 'Percegi Coffee Roastery',
-        paymentNotes: settings.paymentNotes || 'Pembayaran dapat ditransfer melalui rekening resmi berikut:'
+        paymentNotes: settings.paymentNotes || 'Pembayaran dapat ditransfer melalui rekening resmi berikut:',
+        qrisImageUrl: settings.qrisImageUrl || ''
       }));
     }
   }, [settings]);
@@ -169,6 +171,18 @@ const InvoiceSettings = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">URL Gambar QRIS (opsional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://.../qris.png"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-sm"
+                    value={formData.qrisImageUrl}
+                    onChange={e => setFormData({...formData, qrisImageUrl: e.target.value})}
+                  />
+                  <span className="text-[11px] text-gray-400 mt-1 block">Masukkan URL gambar QRIS publik. QRIS akan ditampilkan di bagian pembayaran invoice.</span>
+                </div>
+
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Kalimat Petunjuk Pembayaran di Invoice
                   </label>
@@ -246,6 +260,7 @@ const InvoiceSettings = () => {
                 </div>
               </div>
 
+              {formData.qrisImageUrl && <div className="mt-4 border-t border-slate-200 pt-3 text-center"><p className="mb-2 text-xs font-bold text-slate-600">Pembayaran dengan QRIS</p><img src={formData.qrisImageUrl} alt="Pratinjau QRIS" className="mx-auto h-32 w-32 rounded-lg border border-slate-200 object-contain" /></div>}
               <p className="text-[11px] text-slate-400 mt-2.5 italic">
                 *Mohon sertakan no. invoice pada berita transfer dan kirimkan bukti bayar.
               </p>

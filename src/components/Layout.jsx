@@ -37,6 +37,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
     { id: 'customer', label: 'Data Customer', icon: <Users className="w-5 h-5" /> },
     { id: 'vendor', label: 'Data Vendor', icon: <Briefcase className="w-5 h-5" /> },
     { id: 'finance', label: 'Finance Dashboard', icon: <Wallet className="w-5 h-5" /> },
+    { id: 'production', label: 'Antrean Produksi', icon: <Coffee className="w-5 h-5" /> },
   ];
 
   const settingItems = [
